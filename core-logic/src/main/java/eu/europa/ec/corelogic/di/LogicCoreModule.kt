@@ -27,7 +27,7 @@ import eu.europa.ec.corelogic.controller.WalletCoreLogController
 import eu.europa.ec.corelogic.controller.WalletCoreLogControllerImpl
 import eu.europa.ec.corelogic.controller.WalletCoreTransactionLogController
 import eu.europa.ec.corelogic.controller.WalletCoreTransactionLogControllerImpl
-import eu.europa.ec.corelogic.util.CustomSecureAreaTwo
+import eu.europa.ec.corelogic.util.CustomSecureArea
 import eu.europa.ec.eudi.wallet.EudiWallet
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
 import eu.europa.ec.storagelogic.dao.BookmarkDao
@@ -40,7 +40,6 @@ import org.koin.core.annotation.Module
 import org.koin.core.annotation.Scope
 import org.koin.core.annotation.Single
 import org.koin.mp.KoinPlatform
-import org.multipaz.securearea.AndroidKeystoreSecureArea
 import org.multipaz.securearea.SecureArea
 import org.multipaz.storage.GenericStorageEngine
 import java.io.File
@@ -63,7 +62,7 @@ fun provideEudiWallet(
     val storagePath = File(context.filesDir, "secure_area_keys.db").absolutePath
     withSecureAreas(
         listOf<SecureArea>(
-            CustomSecureAreaTwo(GenericStorageEngine(storageFile = Path(storagePath))),
+            CustomSecureArea(GenericStorageEngine(storageFile = Path(storagePath))),
 //            AndroidKeystoreSecureArea.
         )
     )

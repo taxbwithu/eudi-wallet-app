@@ -1,24 +1,10 @@
 package eu.europa.ec.corelogic.util
 
-import android.util.Log
-import com.android.identity.securearea.KeyPurpose
-import com.android.identity.securearea.PassphraseConstraints
-import com.android.identity.securearea.fromDataItem
-import com.android.identity.securearea.keyPurposeSet
-import kotlinx.io.bytestring.ByteString
-import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey
-import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPublicKey
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec
 import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import kotlin.random.Random
-import com.upokecenter.cbor.CBORObject
 import eu.europa.ec.eudi.wallet.document.credential.CustomKeyInfo
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner
 import org.multipaz.cbor.Bstr
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborMap
@@ -38,16 +24,12 @@ import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
 import org.multipaz.securearea.software.SoftwareCreateKeySettings
 import org.multipaz.storage.StorageEngine
-import java.math.BigInteger
 import java.security.KeyFactory
 import java.security.Signature
-import java.security.interfaces.ECPublicKey
-import java.security.spec.ECParameterSpec
-import java.security.spec.ECPoint
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 
-class CustomSecureAreaTwo(private val storageEngine: StorageEngine) : SecureArea {
+class CustomSecureArea(private val storageEngine: StorageEngine) : SecureArea {
     override val identifier get() = "AndroidKeystoreSecureArea"
     override val supportedAlgorithms: List<Algorithm>
         get() = listOf(Algorithm.UNSET)
