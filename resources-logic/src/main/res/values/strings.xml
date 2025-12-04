@@ -1,0 +1,432 @@
+<!--
+  ~ Copyright (c) 2023 European Commission
+  ~
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+  ~ Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
+  ~ except in compliance with the Licence.
+  ~
+  ~ You may obtain a copy of the Licence at:
+  ~ https://joinup.ec.europa.eu/software/page/eupl
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software distributed under
+  ~ the Licence is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF
+  ~ ANY KIND, either express or implied. See the Licence for the specific language
+  ~ governing permissions and limitations under the Licence.
+  -->
+
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Generic -->
+    <string name="generic_error_message">Ups! Coś poszło nie tak</string>
+    <string name="generic_error_description">Jeśli problem będzie występował, skontaktuj się z pomocą techniczną</string>
+    <string name="generic_error_button_retry">PONÓW</string>
+    <string name="generic_network_error_message">Nie masz połączenia z internetem</string>
+    <string name="generic_error_retry">Spróbuj ponownie</string>
+    <string name="generic_cancel">Anuluj</string>
+    <string name="generic_cancel_capitalized" tools:ignore="ButtonCase">ANULUJ</string>
+    <string name="generic_next_capitalized" tools:ignore="ButtonCase">NASTĘPNY</string>
+    <string name="generic_confirm_capitalized" tools:ignore="ButtonCase">POTWIERDŹ</string>
+    <string name="generic_continue">Kontynuuj</string>
+    <string name="generic_continue_capitalized" tools:ignore="ButtonCase">KONTYNUUJ</string>
+    <string name="generic_enable_capitalized" tools:ignore="ButtonCase">AKTYWUJ</string>
+    <string name="generic_success">Sukces</string>
+    <string name="generic_close">Zamknij</string>
+    <string name="generic_ok">OK</string>
+    <string name="generic_dash">-</string>
+    <string name="generic_default_relying_party_name">Podmiot Podlegający</string>
+    <string name="generic_default_issuer_name">Emitent</string>
+    <string name="generic_view_details">Zobacz szczegóły</string>
+    <string name="generic_deferred_success_text">W trakcie!</string>
+    <string name="generic_bottom_sheet_delete_title">Usuń dokument?</string>
+    <string name="generic_bottom_sheet_delete_subtitle">Ten dokument zostanie permanentnie usunięty z twojego portfela i może wpłynąć na dostęp do usług.</string>
+    <string name="generic_bottom_sheet_delete_primary_button_text">Usuń</string>
+    <string name="generic_bottom_sheet_delete_secondary_button_text">Anuluj</string>
+    <string name="generic_scan_qr">Zeskanuj QR</string>
+    <string name="generic_or">OR</string>
+    <string name="generic_filters_apply">Zatwierdź</string>
+    <string name="generic_filters_reset">Resetuj wszystko</string>
+    <string name="generic_filters_title">Filtr</string>
+    <string name="generic_filters_sort_by">Sortuj przez</string>
+    <string name="generic_filters_ascending">Rosnąco</string>
+    <string name="generic_filters_descending">Malejąco</string>
+
+    <!-- Content Description -->
+    <string name="content_description_image_or_placeholder_icon">Obrazek lub placeholder</string>
+    <string name="content_description_user_signature_icon">Podpis użytkownika</string>
+    <string name="content_description_qr_code_icon">Kod QR</string>
+    <string name="content_description_more_vert_icon">Więcej Przedmiotów</string>
+    <string name="content_description_arrow_back_icon">Wróć</string>
+    <string name="content_description_close_icon">Zamknij</string>
+    <string name="content_description_warning_icon">Ostrzeżenie</string>
+    <string name="content_description_error_icon">Błąd</string>
+    <string name="content_description_error_filled_icon">Błąd</string>
+    <string name="content_description_delete_icon">Usuń</string>
+    <string name="content_description_touch_id_icon">Touch id</string>
+    <string name="content_description_qr_icon">QR</string>
+    <string name="content_description_qr_scanner_icon">Skaner QR</string>
+    <string name="content_description_nfc_icon">NFC</string>
+    <string name="content_description_user_icon">Użytkownik</string>
+    <string name="content_description_id_icon">Id</string>
+    <string name="content_description_id_stroke_icon">Id stroke</string>
+    <string name="content_description_logo_full_icon">Pełna ikona Logo</string>
+    <string name="content_description_logo_plain_icon">Czysta ikona Logo</string>
+    <string name="content_description_logo_text_icon">Ikona Logo z Tekstem</string>
+    <string name="content_description_arrow_up_icon">Strzałka w górę</string>
+    <string name="content_description_arrow_down_icon">Strzałka w dół</string>
+    <string name="content_description_visibility_icon">Pokaż</string>
+    <string name="content_description_visibility_off_icon">Ukryj</string>
+    <string name="content_description_add_icon">Dodaj</string>
+    <string name="content_description_edit_icon">Edytuj</string>
+    <string name="content_description_verified_icon">Zweryfikowane</string>
+    <string name="content_description_message_icon">Wiadomość</string>
+    <string name="content_description_success_icon">Sukces</string>
+    <string name="content_description_clock_timer_icon">Zegar</string>
+    <string name="content_description_arrow_right_icon">Strzałka w Prawo</string>
+    <string name="content_description_open_new_icon">Otwórz nowe</string>
+    <string name="content_description_handle_bar_icon">bar</string>
+    <string name="content_description_search_icon">Wyszukaj</string>
+    <string name="content_description_present_document_same_device_icon">Przedstaw dokument osobiście</string>
+    <string name="content_description_present_document_cross_device_icon">Przedstaw dokument online</string>
+    <string name="content_description_add_document_from_list_icon">Dodaj dokument z listy</string>
+    <string name="content_description_add_document_from_qr_icon">Dodaj dokument przez QR</string>
+    <string name="content_description_authenticate_in_person_icon">Potwierdź osobiście</string>
+    <string name="content_description_authenticate_online_icon">Potwierdź online</string>
+    <string name="content_description_sign_document_from_device_icon">Podpisz poprzez urządzenie</string>
+    <string name="content_description_sign_document_from_qr_icon">Podpisz poprzez QA</string>
+
+    <string name="content_description_bookmark_icon">Zakładka</string>
+    <string name="content_description_bookmark_filled_icon">Zakładka wypełniona</string>
+    <string name="content_description_certified_icon">Potwierdzone</string>
+    <string name="content_description_documents_icon">Dokumenty</string>
+    <string name="content_description_download_icon">Pobierz</string>
+    <string name="content_description_filters_icon">Filtry</string>
+    <string name="content_description_home_icon">Ekran Główny</string>
+    <string name="content_description_in_progress_icon">W trakcie</string>
+    <string name="content_description_notifications_icon">Powiadomienia</string>
+    <string name="content_description_transactions_icon">Transakcje</string>
+    <string name="content_description_wallet_activated_icon">Portfel Aktywowany</string>
+    <string name="content_description_wallet_secured_icon">Portfel Zabezpieczony</string>
+    <string name="content_description_info_icon">Info</string>
+    <string name="content_description_issuer_icon">Wydawca</string>
+    <string name="content_description_issuer_logo_icon">Logo Wydawcy</string>
+    <string name="content_description_menu_icon">Opcje</string>
+    <string name="content_description_signature_icon">Podpis</string>
+    <string name="content_description_authenticate_icon">Authentication ID cards</string>
+    <string name="content_description_change_pin_icon">Zmień PIN</string>
+    <string name="content_description_check_icon">Sprawdź</string>
+    <string name="content_description_open_in_browser_icon">Otwórz w przeglądarce</string>
+    <string name="content_description_date_range_icon">Wybierz filtrowaną datę</string>
+    <string name="content_description_settings_icon">Ustawienia</string>
+
+    <!-- Biometric prompt -->
+    <string name="biometric_prompt_title">Autentykacja biometryczna</string>
+    <string name="biometric_prompt_subtitle">Potwierdź tożsamość używając biometrii</string>
+    <string name="biometric_login_title">Witaj ponownie</string>
+    <string name="biometric_login_biometrics_enabled_subtitle">Użyj biometrii by uzyskać dostęp do portfela EUDI.</string>
+    <string name="biometric_login_biometrics_not_enabled_subtitle">By uzyskać dostęp do portfela EUDI wprowadź PIN.</string>
+
+    <!-- Biometrics -->
+    <string name="biometric_no_hardware">Twoje urządzenie nie wspiera biometrycznej autentykacji</string>
+    <string name="biometric_unknown_error">Coś poszło nie tak przy inicjalizacji biometrycznej autentykacji. Spróbuj ponownie</string>
+    <string name="biometric_default_mode_text_above_pin_field">PIN</string>">
+
+    <!-- Document Success -->
+    <string name="document_success_header_description">Pomyślnie podzieliłeś się informacją z</string>
+    <string name="document_success_header_description_when_error">Pomyślnie podzieliłeś się informacją z</string>
+    <string name="document_success_relying_party_default_name">@string/generic_default_relying_party_name</string>
+    <string name="document_success_collapsed_supporting_text">@string/generic_view_details</string>
+    <string name="document_success_sticky_button_text">@string/generic_close</string>
+
+    <!-- Quick Pin -->
+    <string name="quick_pin_invalid_error">Niepoprawny szybki pin</string>
+    <string name="quick_pin_numerical_rule_invalid_error_message">Tylko wartości numeryczne są dozwolone</string>
+    <string name="quick_pin_non_match">Piny nie pasują</string>
+
+    <string name="quick_pin_create_title">Witaj w swoim Portfelu</string>
+    <string name="quick_pin_create_enter_subtitle">Zabezpiecz swój portfel kodem PIN.</string>
+    <string name="quick_pin_create_reenter_subtitle">Wprowadź szybki pin raz jeszcze</string>
+
+    <string name="quick_pin_change_title">Zmień szybki pin</string>
+    <string name="quick_pin_change_validate_current_subtitle">Wprowadź twój obecny pin</string>
+    <string name="quick_pin_change_enter_new_subtitle">Wybierz szybki pin dla przyszłego logowania</string>
+    <string name="quick_pin_change_reenter_new_subtitle">Wprowadź ponownie nowy szybki pin</string>
+
+    <string name="quick_pin_create_success_text">Twój portfel jest bezpieczny!</string>
+    <string name="quick_pin_create_success_description">By aktywować portfel, połącz się z Narodowym Systemem by dodać twoje Wirtualne ID.</string>
+    <string name="quick_pin_create_success_btn">Dodaj moje Wirtualne ID</string>
+    <string name="quick_pin_change_success_text">@string/generic_success</string>
+    <string name="quick_pin_change_success_description">Pomyślnie zmieniłeś szybki pin</string>
+    <string name="quick_pin_change_success_btn">POWRÓT DO EKRANU GŁÓWNEGO</string>
+
+    <string name="quick_pin_bottom_sheet_cancel_title">Anuluj edycję szybkiego pinu?</string>
+    <string name="quick_pin_bottom_sheet_cancel_subtitle">Anulowanie przeniesie cię do ekranu głównego bez zmiany szybkiego pinu</string>
+    <string name="quick_pin_bottom_sheet_cancel_primary_button_text">@string/generic_continue_capitalized</string>
+    <string name="quick_pin_bottom_sheet_cancel_secondary_button_text">@string/generic_cancel_capitalized</string>
+
+    <!-- Ekran żądania -->
+    <string name="request_header_description">Następująca transakcja wymaga Twojej zgody i uwierzytelnienia.</string>
+    <string name="request_header_main_text">ŻĄDANIE UDOSTĘPNIANIA DANYCH</string>
+    <string name="request_relying_party_default_name">@string/generic_default_relying_party_name</string>
+    <string name="request_relying_party_description">żąda następujących rzeczy</string>
+    <string name="request_warning_text">Przed udostępnieniem danych prosimy o dokładne zapoznanie się z nimi.</string>
+    <string name="request_collapsed_supporting_text">@string/generic_view_details</string>
+    <string name="request_no_data">Żądany dokument nie jest dostępny w Twoim portfelu EUDI. Aby uzyskać więcej informacji, skontaktuj się z autoryzowanym wystawcą.</string>
+    <string name="request_sticky_button_text">Udostępnij</string>
+    <string name="request_bottom_sheet_warning_title">Ostrzeżenie</string>
+    <string name="request_bottom_sheet_warning_subtitle">Nieudostępnienie niektórych danych może skutkować niewydaniem żądanego dokumentu.</string>
+    <string name="request_gender_male">Mężczyzna</string>
+    <string name="request_gender_female">Kobieta</string>
+    <string name="request_gender_not_known">Nieznane</string>
+    <string name="request_gender_not_applicable">Nie dotyczy</string>
+
+    <!-- Ekran ładowania -->
+    <string name="loading_header_description">Proszę czekać…</string>
+    <string name="loading_biometry_biometrics_enabled_description">Użyj danych biometrycznych, aby zatwierdzić transakcję.</string>
+    <string name="loading_biometry_biometrics_not_enabled_description">Aby zatwierdzić transakcję, musisz zweryfikować swoją tożsamość.</string>
+
+    <!-- Panel -->
+    <string name="dashboard_document_has_not_expired">Ważne do:\ %1$s</string>
+    <string name="dashboard_document_has_expired">Wygasło</string>
+    <string name="dashboard_document_deferred_pending">Oczekujące</string>
+    <string name="dashboard_document_deferred_failed">Wystawienie nieudane</string>
+    <string name="dashboard_document_revoked">Unieważnione</string>
+    <string name="dashboard_document_credentials_info_text">%d/%d</string>
+
+    <string name="dashboard_bottom_sheet_bluetooth_title">Włączyć Bluetooth?</string>
+    <string name="dashboard_bottom_sheet_bluetooth_subtitle">Włącz Bluetooth, aby udostępniać swoje informacje za pomocą opcji Uwierzytelnij osobiście lub online</string>
+    <string name="dashboard_bottom_sheet_bluetooth_primary_button_text">@string/generic_enable_capitalized</string>
+    <string name="dashboard_bottom_sheet_bluetooth_secondary_button_text">@string/generic_cancel_capitalized</string>
+
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_title">@string/generic_bottom_sheet_delete_title</string>
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_subtitle">@string/generic_bottom_sheet_delete_subtitle</string>
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_primary_button_text">@string/generic_bottom_sheet_delete_primary_button_text</string>
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_secondary_button_text">@string/generic_bottom_sheet_delete_secondary_button_text</string>
+
+    <string name="dashboard_bottom_sheet_deferred_documents_ready_title">Wydane dokumenty</string>
+    <string name="dashboard_bottom_sheet_deferred_documents_ready_subtitle">Nowe dokumenty zostały dodane do Twojego portfela.</string>
+
+    <string name="dashboard_bottom_sheet_revoked_document_dialog_title">Unieważnione dokumenty</string>
+    <string name="dashboard_bottom_sheet_revoked_document_dialog_subtitle">Następujące dokumenty zostały unieważnione.</string>
+
+    <!-- Menu boczne pulpitu nawigacyjnego -->
+    <string name="dashboard_side_menu_title">Mój portfel UE</string>
+    <string name="dashboard_side_menu_option_change_pin">Zmień PIN</string>
+    <string name="dashboard_side_menu_option_change_pin_id">changePinId</string>
+    <string name="dashboard_side_menu_option_settings">Ustawienia</string>
+    <string name="dashboard_side_menu_option_settings_id">settingsId</string>
+
+    <!-- Ekran ustawień -->
+    <string name="settings_screen_title">Ustawienia</string>
+    <string name="settings_screen_option_show_batch_issuance_counter">Licznik wydań zbiorczych</string>
+    <string name="settings_screen_option_show_batch_issuance_counter_id">batchIssuanceCounterId</string>
+    <string name="settings_screen_option_retrieve_logs">Pobierz logi</string>
+    <string name="settings_screen_option_retrieve_logs_id">retrieveLogsId</string>
+    <string name="settings_screen_option_changelog">Dziennik zmian</string>
+    <string name="settings_screen_option_changelog_id">changelogId</string>
+    <string name="settings_intent_chooser_logs_share_title">Udostępnij logi</string>
+
+    <!-- Ekran główny -->
+    <string name="home_screen_title">Strona główna</string>
+    <string name="home_screen_welcome">Witamy ponownie</string>
+    <string name="home_screen_welcome_user_message">Witamy ponownie, %1$s</string>
+    <string name="home_screen_authentication_card_title">Uwierzytelniaj, autoryzuj transakcje i udostępniaj swoje dokumenty cyfrowe osobiście lub online.</string>
+    <string name="home_screen_sign_card_title">Podpisuj elektronicznie dokumenty cyfrowe za pomocą portfela, wybierając plik ze swojego urządzenia.</string>
+    <string name="home_screen_authenticate">Uwierzytelniaj</string>
+    <string name="home_screen_authenticate_description">Uwierzytelniaj, udostępniając swoje dane osobiście (w bliskiej odległości) lub online (strona internetowa/usługa).</string>
+    <string name="home_screen_sign">Podpisz</string>
+    <string name="home_screen_learn_more">Dowiedz się więcej</string>
+    <string name="home_screen_authenticate_option_in_person">Osobiście</string>
+    <string name="home_screen_add_document_option_online">Online</string>
+
+    <string name="home_screen_sign_document">Podpisz dokument</string>
+    <string name="home_screen_sign_document_description">Podpisz dokument cyfrowo, wybierając plik z urządzenia lub skanując kod QR.</string>
+    <string name="home_screen_sign_document_option_from_device">Z urządzenia</string>
+    <string name="home_screen_sign_document_option_scan_qr">Skanuj kod QR</string>
+
+    <!-- Ekran główny Dowiedz się więcej Treść wyskakujących okienek -->
+    <string name="home_screen_authenticate_learn_more_inner_title">Podpisuj dokumenty bezpiecznie</string>
+    <string name="home_screen_authenticate_learn_more_description">Podpisuj dokumenty za pomocą samego portfela. Złożenie prawnie wiążącego podpisu elektronicznego będzie szybsze i łatwiejsze niż kiedykolwiek, umożliwiając prowadzenie działalności w dowolnym miejscu.</string>
+    <string name="home_screen_sign_learn_more_inner_title">Uzyskaj dostęp do usług online</string>
+    <string name="home_screen_sign_learn_more_description">Potwierdź swoją tożsamość w szerokiej gamie publicznych i prywatnych usług online, chroniąc jednocześnie swoją prywatność. Udowodnij swoją tożsamość kilkoma kliknięciami – bez konieczności zarządzania niezliczonymi hasłami.</string>
+
+    <!-- Ekran Dokumentów -->
+    <string name="documents_screen_title">Dokumenty</string>
+    <string name="documents_screen_search_label">Szukaj dokumentów</string>
+    <string name="documents_screen_search_no_results">Brak dokumentów pasujących do wyszukiwania. Spróbuj zmienić zapytanie lub filtry wyszukiwania.</string>
+    <string name="documents_screen_search_no_results_id">noResultsId</string>
+    <string name="documents_screen_add_document_title">Dodaj dokument</string>
+    <string name="documents_screen_add_document_description">Dodaj dokumenty do portfela, wybierając je z listy lub skanując podany kod QR.</string>
+    <string name="documents_screen_add_document_option_list">Z listy</string>
+    <string name="documents_screen_add_document_option_qr">@string/generic_scan_qr</string>
+    <string name="documents_screen_add_document_option_or">@string/generic_or</string>
+    <string name="documents_screen_filters_title">@string/generic_filters_title</string>
+    <string name="documents_screen_filters_sort_by">@string/generic_filters_sort_by</string>
+    <string name="documents_screen_filters_ascending">@string/generic_filters_ascending</string>
+    <string name="documents_screen_filters_descending">@string/generic_filters_descending</string>
+    <string name="documents_screen_filters_sort_default">Domyślne</string>
+    <string name="documents_screen_filters_sort_date_issued">Data wydania</string>
+    <string name="documents_screen_filters_sort_expiry_date">Data ważności</string>
+    <string name="documents_screen_filters_filter_by_issuer">Filtruj według wystawcy</string>
+    <string name="documents_screen_filters_filter_by_category">Filtruj według kategorii</string>
+    <string name="documents_screen_filters_filter_by_all">Wszystkie</string>
+    <string name="documents_screen_filters_filter_by_state">Filtruj według stanu</string>
+    <string name="documents_screen_filters_filter_by_state_revoked">Unieważniono</string>
+    <string name="documents_screen_filters_filter_by_state_valid">Ważny</string>
+    <string name="documents_screen_filters_filter_by_state_expired">Wygasł</string>
+    <string name="documents_screen_filters_filter_by_expiry_period">Filtruj według okresu ważności</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_1">Następne 7 dni</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_2">Następne 30 dni</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_3">Powyżej 30 dni</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_4">Przed dzisiejszym dniem (wygasło)</string>
+    <string name="documents_screen_filters_apply">@string/generic_filters_apply</string>
+    <string name="documents_screen_filters_reset">@string/generic_filters_reset</string>
+
+    <!-- Ekran transakcji -->
+    <string name="transactions_screen_title">Transakcje</string>
+    <string name="transactions_screen_search_label">Wyszukaj transakcje</string>
+    <string name="transactions_screen_search_no_results_id">noTransactionsId</string>
+    <string name="transactions_screen_search_no_results">Nie znaleziono transakcji. Spróbuj zmienić zapytanie wyszukiwania lub filtry.</string>
+    <string name="transactions_screen_0_minutes_ago_message">Przed chwilą</string>
+    <plurals name="transactions_screen_some_minutes_ago_message">
+        <item quantity="one">%d minut temu</item>
+        <item quantity="other">%d minut temu</item>
+    </plurals>
+    <string name="transactions_screen_text_field_date_pattern">dd/mm/rrrr</string>
+
+    <!-- Ekran transakcji, Filtruj etykiety-->
+    <string name="transactions_screen_filters_title">@string/generic_filters_title</string>
+    <string name="transactions_screen_filters_sort_by">@string/generic_filters_sort_by</string>
+    <string name="transactions_screen_filters_ascending">@string/generic_filters_ascending</string>
+    <string name="transactions_screen_filters_descending">@string/generic_filters_descending</string>
+    <string name="transactions_screen_filters_sort_transaction_date">Data transakcji</string>
+    <string name="transactions_screen_filter_by_date_period">Filtruj według daty transakcji i okresu</string>
+    <string name="transactions_screen_filter_by_status">Filtruj według statusu</string>
+    <string name="transactions_screen_filters_filter_by_relying_party">Filtruj według strony polegającej</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type">Filtruj według typu transakcji</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type_presentation">Prezentacja</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type_issuance">Wydanie</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type_signing">Podpisywanie</string>
+    <string name="transactions_screen_filters_date_from">Data od</string>
+    <string name="transactions_screen_filters_date_to">Data do</string>
+    <string name="transactions_filter_item_status_completed">Zakończono</string>
+    <string name="transactions_filter_item_status_failed">Niepowodzenie</string>
+    <string name="transactions_filter_item_no_relying_party_transactions">Brak strony polegającej</string>
+    <string name="transactions_screen_filters_apply">@string/generic_filters_apply</string>
+    <string name="transactions_screen_filters_reset">@string/generic_filters_reset</string>
+
+    <!-- Podpis dokumentu -->
+    <string name="document_sign_title">Podpisz dokument</string>
+    <string name="document_sign_subtitle">Wybierz dokument ze swojego urządzenia, aby podpisać go elektronicznie.</string>
+    <string name="document_sign_select_document">Wybierz dokument</string>
+    <string name="document_sign_select_document_button_id">documentSignButtonId</string>
+
+    <!-- Skanowanie QR -->
+    <string name="qr_scan_permission_not_granted">Brak uprawnień do aparatu\nOtwórz Ustawienia aplikacji</string>
+    <string name="qr_scan_informative_text_presentation_flow">Masz problem ze zeskanowaniem kodu QR?\nWypróbuj alternatywny sposób</string>
+    <string name="qr_scan_informative_text_issuance_flow">Masz problem ze zeskanowaniem kodu QR?\nWypróbuj alternatywny sposób</string>
+    <string name="qr_scan_informative_text_signature_flow">Masz problem ze zeskanowaniem kodu QR?\nWypróbuj alternatywny sposób</string>
+
+    <!-- Szczegóły dokumentu -->
+    <string name="document_details_revoked_document_message">Ten dokument został unieważniony przez wystawcę. Aby uzyskać więcej informacji, skontaktuj się z usługą wystawiającą.</string>
+    <string name="document_details_boolean_item_true_readable_value">tak</string>
+    <string name="document_details_boolean_item_false_readable_value">nie</string>
+
+    <string name="document_details_bottom_sheet_delete_title">@string/generic_bottom_sheet_delete_title</string>
+    <string name="document_details_bottom_sheet_delete_subtitle">@string/generic_bottom_sheet_delete_subtitle</string>
+    <string name="document_details_bottom_sheet_delete_primary_button_text">@string/generic_bottom_sheet_delete_primary_button_text</string>
+    <string name="document_details_bottom_sheet_delete_secondary_button_text">@string/generic_bottom_sheet_delete_secondary_button_text</string>
+
+    <string name="document_details_document_credentials_info_text">Pozostało %d/%d instancji</string>
+    <string name="document_details_document_credentials_info_more_info_text">Więcej informacji</string>
+    <string name="document_details_document_credentials_info_expanded_text_subtitle">Ze względów bezpieczeństwa ten dokument może być udostępniany ograniczoną liczbę razy, zanim będzie musiał zostać ponownie wydany przez organ wydający.</string>
+    <string name="document_details_document_credentials_info_expanded_button_hide_text">Ukryj</string>
+    <string name="document_details_main_section_text">SZCZEGÓŁY DOKUMENTU</string>
+    <string name="document_details_issuer_section_text">WYDAWCA</string>
+    <string name="document_details_secondary_button_text">Usuń dokument</string>
+
+    <string name="document_details_bottom_sheet_bookmark_info_title">Zapisano w ulubionych</string>
+    <string name="document_details_bottom_sheet_bookmark_info_message">Dokument został pomyślnie dodany do listy ulubionych.</string>
+    <string name="document_details_bottom_sheet_bookmark_removed_info_title">Usunięto z ulubionych</string>
+    <string name="document_details_bottom_sheet_bookmark_removed_info_message">Dokument został pomyślnie usunięty z listy ulubionych.</string>
+
+    <string name="document_details_bottom_sheet_badge_title">Zaufana strona ufająca</string>
+    <string name="document_details_bottom_sheet_badge_subtitle">Strona ufająca jest uważana za zaufaną, gdy spełnia
+wstępnie zdefiniowane kryteria bezpieczeństwa, ochrony danych, zgodności i odpowiedzialnego przetwarzania danych.</string>
+    <!-- Szczegóły transakcji -->
+    <string name="transaction_details_screen_title">Informacje o transakcji</string>
+    <string name="transaction_details_screen_card_date_label">Data</string>
+    <string name="transaction_details_request_deletion_message">Możesz zażądać zaprzestania przetwarzania danych osobowych powiązanych z tą transakcją. Może to wpłynąć na Twój dostęp do usług.</string>
+    <string name="transaction_details_report_transaction_message">Jeśli uważasz, że strona powierzająca dane bezprawnie zażądała danych osobowych, możesz zgłosić tę transakcję odpowiednim organom.</string>
+    <string name="transaction_details_request_deletion_button">Poproś o usunięcie danych</string>
+    <string name="transaction_details_report_transaction_button">Zgłoś podejrzaną transakcję</string>
+    <string name="transaction_details_data_shared_section_title">UDOSTĘPNIONE DANE</string>
+    <string name="transaction_details_data_shared_prefix_id">transactionDetailsDataSharedId</string>
+    <string name="transaction_details_data_signed_section_title">DANE PODPISANE</string>
+    <string name="transaction_details_data_signed_prefix_id">transactionDetailsDataSignedId</string>
+    <string name="transaction_details_collapsed_supporting_text">@string/generic_view_details</string>
+
+    <!-- Kod QR zbliżeniowy -->
+    <string name="proximity_qr_title">Przedstaw dokument osobiście</string>
+    <string name="proximity_qr_subtitle">Pokaż ten kod QR stronie powierniczej, aby przedstawić dokument cyfrowy.</string>
+    <string name="proximity_qr_use_nfc">Lub udostępnij przez NFC</string>
+    <string name="proximity_qr_hold_near_reader">Zbliż telefon do czytnika, aby zeskanować.</string>
+
+    <!-- Skanowanie kodu QR prezentacji -->
+    <string name="presentation_qr_scan_title">Przedstaw dokument online</string>
+    <string name="presentation_qr_scan_subtitle">Zeskanuj kod QR otrzymany od strony powierniczej, aby przedstawić dokument cyfrowy.</string>
+    <!-- Skanowanie kodu QR podpisu -->
+    <string name="signature_qr_scan_title">Podpisz dokument</string>
+    <string name="signature_qr_scan_subtitle">Zeskanuj kod QR, aby elektronicznie podpisać dokument.</string>
+
+    <!-- Ekran dodawania dokumentu -->
+    <string name="issuance_add_document_title">Dodaj dokument z listy</string>
+    <string name="issuance_add_document_subtitle">Wybierz dokument cyfrowy z poniższej listy, aby dodać go do portfela.</string>
+    <string name="issuance_add_document_scan_qr_footer_text">@string/generic_or</string>
+    <string name="issuance_add_document_scan_qr_footer_button_text">@string/generic_scan_qr</string>
+    <string name="issuance_add_document_deferred_success_text">@string/generic_deferred_success_text</string>
+    <string name="issuance_add_document_deferred_success_description">Twój dokument został poproszony. Otrzymasz powiadomienie, gdy zostanie on dodany do Twojego portfela.</string>
+    <string name="issuance_add_document_deferred_success_primary_button_text">@string/generic_ok</string>
+
+    <!-- Ekran powodzenia wydania -->
+    <string name="issuance_success_header_description">Pomyślnie dodano następujące elementy do portfela</string>
+    <string name="issuance_success_header_description_when_error">Pomyślnie dodano dokumenty do portfela</string>
+    <string name="issuance_success_header_issuer_default_name">@string/generic_default_issuer_name</string>
+
+    <!-- Skanowanie kodu QR wydania -->
+    <string name="issuance_qr_scan_title">Dodaj dokument z kodu QR</string>
+    <string name="issuance_qr_scan_subtitle">Zeskanuj kod QR otrzymany od wystawcy, aby dodać dokument cyfrowy do portfela.</string>
+    <!-- Oferta Dokumentów Emisji -->
+    <string name="issuance_document_offer_primary_button_text_add">Dodaj</string>
+    <string name="issuance_document_offer_deferred_success_text">@string/generic_deferred_success_text</string>
+    <string name="issuance_document_offer_deferred_success_description">Zażądano dokumentów z %1$s. Otrzymasz powiadomienie, gdy zostaną one dodane do Twojego portfela.</string>
+    <string name="issuance_document_offer_deferred_success_primary_button_text">@string/generic_ok</string>
+    <string name="issuance_document_offer_error_missing_pid_text">Portfel musi zostać najpierw aktywowany za pomocą dowodu osobistego</string>
+    <string name="issuance_document_offer_error_invalid_txcode_format">Nieprawidłowy format kodu transakcji. Długość powinna wynosić od %1$d do %2$d cyfr. Dozwolone są wyłącznie znaki numeryczne.</string>
+    <string name="issuance_document_offer_error_no_document">Nie można pobrać i przetworzyć oferty poświadczeń</string>
+
+    <string name="issuance_document_offer_description">Następująca transakcja wymaga Twojej zgody i uwierzytelnienia.</string>
+    <string name="issuance_document_offer_header_main_text">WNIOSEK O WYDANIE</string>
+    <string name="issuance_document_offer_relying_party_default_name">@string/generic_default_issuer_name</string>
+    <string name="issuance_document_offer_relying_party_description">chce dodać następujące dane</string>
+    <!-- Kod oferty dokumentu emisyjnego -->
+    <string name="issuance_code_title">%1$s wymaga weryfikacji</string>
+    <string name="issuance_code_caption">Wpisz %1$d-cyfrowy kod transakcji, który otrzymałeś.</string>
+
+    <!-- Błędy dokumentu emisyjnego -->
+    <string name="issuance_generic_error">Wystąpił błąd podczas wystawiania dokumentu/dokumentów</string>
+
+    <!-- Kategorie dokumentów -->
+    <string name="document_category_government">RZĄD</string>
+    <string name="document_category_travel">PODRÓŻE</string>
+    <string name="document_category_finance">FINANSE</string>
+    <string name="document_category_education">EDUKACJA</string>
+    <string name="document_category_health">ZDROWIE</string>
+    <string name="document_category_social_security">UBEZPIECZENIA SPOŁECZNE</string>
+    <string name="document_category_retail">HANDEL DETALICZNY</string>
+    <string name="document_category_other">INNE</string>
+
+    <!-- Transaction Categories -->
+    <string name="transaction_category_today">DZISIAJ</string>">
+    <string name="transaction_category_this_week">TEN TYDZIEŃ</string>">
+    <string name="transaction_category_month_year">MIESIĄC</string>">
+</resources>
