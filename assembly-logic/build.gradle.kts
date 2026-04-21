@@ -21,6 +21,8 @@ import project.convention.logic.config.LibraryModule.AuthenticationLogic
 import project.convention.logic.config.LibraryModule.BusinessLogic
 import project.convention.logic.config.LibraryModule.CommonFeature
 import project.convention.logic.config.LibraryModule.CoreLogic
+import project.convention.logic.config.LibraryModule.DocumentManager
+import project.convention.logic.config.LibraryModule.WalletCore
 import project.convention.logic.config.LibraryModule.DashboardFeature
 import project.convention.logic.config.LibraryModule.IssuanceFeature
 import project.convention.logic.config.LibraryModule.NetworkLogic
@@ -63,6 +65,7 @@ dependencies {
     api(project(AnalyticsLogic.path))
     api(project(AuthenticationLogic.path))
     api(project(CoreLogic.path))
+    api(project(DocumentManager.path))
     api(project(StorageLogic.path))
 
     // Feature Modules

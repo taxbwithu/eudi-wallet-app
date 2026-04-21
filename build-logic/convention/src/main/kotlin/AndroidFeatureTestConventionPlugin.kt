@@ -41,6 +41,8 @@ class AndroidFeatureTestConventionPlugin : Plugin<Project> {
                 add("implementation", project(LibraryModule.ResourcesLogic.path))
                 add("implementation", project(LibraryModule.AuthenticationLogic.path))
                 add("implementation", project(LibraryModule.CoreLogic.path))
+                add("implementation", project(LibraryModule.DocumentManager.path))
+                add("implementation", project(LibraryModule.WalletCore.path))
                 add("implementation", project(LibraryModule.AnalyticsLogic.path))
                 add("api", project(LibraryModule.TestLogic.path))
             }
