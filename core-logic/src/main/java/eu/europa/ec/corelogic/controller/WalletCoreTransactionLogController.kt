@@ -40,7 +40,6 @@ class WalletCoreTransactionLogControllerImpl(
     override fun log(transaction: TransactionLog) {
         scope.launch {
             val json = Gson().toJson(transaction)
-            //val json = "String"
             transactionLogDao.store(
                 TransactionStorage(
                     identifier = uuidProvider.provideUuid(),

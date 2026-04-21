@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -25,16 +25,13 @@ import eu.europa.ec.uilogic.component.wrap.ExpandableListItemUi
 
 sealed class DomainDocumentFormat {
     data object SdJwtVc : DomainDocumentFormat()
-    data class MsoMdoc(val namespace: String) :
-        DomainDocumentFormat()
+    data object MsoMdoc : DomainDocumentFormat()
 
     companion object {
-        fun getFormat(format: DocumentFormat, namespace: String?): DomainDocumentFormat {
+        fun getFormat(format: DocumentFormat): DomainDocumentFormat {
             return when (format) {
                 is SdJwtVcFormat -> SdJwtVc
-                is MsoMdocFormat -> MsoMdoc(
-                    namespace = namespace.toString()
-                )
+                is MsoMdocFormat -> MsoMdoc
             }
         }
     }

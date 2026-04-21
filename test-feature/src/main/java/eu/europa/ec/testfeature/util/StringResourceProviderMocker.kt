@@ -55,13 +55,6 @@ object StringResourceProviderMocker {
         availableCredentials: Int,
         totalCredentials: Int,
     ) {
-        val mockedStrings = listOf(
-            R.string.document_details_document_credentials_info_more_info_text to "More info",
-            R.string.document_details_document_credentials_info_expanded_text_subtitle to "For security reasons, this document can be shared a limited number of times before it needs to be re-issued by the issuing authority.",
-            R.string.document_details_document_credentials_info_expanded_button_hide_text to "Hide",
-        )
-        mockResourceProviderStrings(resourceProvider, mockedStrings)
-
         whenever(
             resourceProvider.getString(
                 R.string.document_details_document_credentials_info_text,

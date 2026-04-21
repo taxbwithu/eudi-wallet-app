@@ -1,5 +1,7 @@
+import com.android.build.api.dsl.TestExtension
+
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -18,6 +20,6 @@ plugins {
     id("project.android.base.profile")
 }
 
-android {
+extensions.configure<TestExtension>("android") {
     namespace = "eu.europa.ec.baselineprofile"
 }

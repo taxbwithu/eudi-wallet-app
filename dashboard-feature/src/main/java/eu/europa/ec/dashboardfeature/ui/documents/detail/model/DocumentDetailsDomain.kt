@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -23,6 +23,10 @@ import eu.europa.ec.eudi.wallet.document.DocumentId
 data class DocumentDetailsDomain(
     val docName: String,
     val docId: DocumentId,
+    val issuerId: String,
+    val documentConfigId: String,
     val documentIdentifier: DocumentIdentifier,
     val documentClaims: List<ClaimDomain>,
+    val documentIssuanceDate: String,
+    val documentExpirationDate: String?,
 )

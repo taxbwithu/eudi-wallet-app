@@ -18,12 +18,19 @@ package eu.europa.ec.uilogic.component.content
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
@@ -39,10 +46,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import eu.europa.ec.uilogic.component.AppIcons
 import eu.europa.ec.uilogic.component.IconDataUi
@@ -50,16 +59,23 @@ import eu.europa.ec.uilogic.component.SystemBroadcastReceiver
 import eu.europa.ec.uilogic.component.loader.LoadingIndicator
 import eu.europa.ec.uilogic.component.preview.PreviewTheme
 import eu.europa.ec.uilogic.component.preview.ThemeModePreviews
+import eu.europa.ec.uilogic.component.utils.ALPHA_DISABLED
+import eu.europa.ec.uilogic.component.utils.ALPHA_ENABLED
 import eu.europa.ec.uilogic.component.utils.MAX_TOOLBAR_ACTIONS
+import eu.europa.ec.uilogic.component.utils.SIZE_EXTRA_SMALL
+import eu.europa.ec.uilogic.component.utils.SPACING_SMALL
+import eu.europa.ec.uilogic.component.utils.SPACING_XX_LARGE
 import eu.europa.ec.uilogic.component.utils.TopSpacing
 import eu.europa.ec.uilogic.component.utils.Z_STICKY
 import eu.europa.ec.uilogic.component.utils.screenPaddings
 import eu.europa.ec.uilogic.component.utils.stickyBottomPaddings
 import eu.europa.ec.uilogic.component.wrap.WrapIcon
 import eu.europa.ec.uilogic.component.wrap.WrapIconButton
+import eu.europa.ec.uilogic.extension.throttledClickable
 
 data class ToolbarActionUi(
-    val icon: IconDataUi,
+    val icon: IconDataUi?,
+    val text: String? = null,
     val order: Int = 100,
     val enabled: Boolean = true,
     val customTint: Color? = null,
@@ -70,11 +86,16 @@ data class ToolbarActionUi(
 
 data class ToolbarConfig(
     val title: String = "",
-    val actions: List<ToolbarActionUi> = listOf()
+    val actions: List<ToolbarActionUi> = listOf(),
+    val maxVisibleActions: Int = MAX_TOOLBAR_ACTIONS,
 )
 
 enum class ScreenNavigateAction {
     BACKABLE, CANCELABLE, NONE
+}
+
+enum class ImePaddingConfig {
+    NO_PADDING, WITH_BOTTOM_BAR, ONLY_CONTENT
 }
 
 data class BroadcastAction(val intentFilters: List<String>, val callback: (Intent?) -> Unit)
@@ -93,6 +114,7 @@ fun ContentScreen(
     snackbarHost: @Composable () -> Unit = {},
     contentErrorConfig: ContentErrorConfig? = null,
     broadcastAction: BroadcastAction? = null,
+    imePaddingConfig: ImePaddingConfig = ImePaddingConfig.NO_PADDING,
     bodyContent: @Composable (PaddingValues) -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -105,8 +127,15 @@ fun ContentScreen(
 
     Scaffold(
         topBar = {
-            if (topBar != null && contentErrorConfig == null) topBar.invoke()
-            else if (hasToolBar) {
+            if (topBar != null && contentErrorConfig == null) {
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .statusBarsPadding()
+                ) {
+                    topBar()
+                }
+            } else if (hasToolBar) {
                 DefaultToolBar(
                     navigatableAction = contentErrorConfig?.let {
                         ScreenNavigateAction.CANCELABLE
@@ -117,11 +146,33 @@ fun ContentScreen(
                 )
             }
         },
-        bottomBar = bottomBar ?: {},
+        bottomBar = {
+            bottomBar?.let {
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .then(
+                            if (imePaddingConfig == ImePaddingConfig.WITH_BOTTOM_BAR) {
+                                Modifier.imePadding()
+                            } else {
+                                Modifier
+                            }
+                        )
+                ) {
+                    bottomBar()
+                }
+            }
+        },
         floatingActionButton = fab,
         floatingActionButtonPosition = fabPosition,
         snackbarHost = snackbarHost,
     ) { padding ->
+
+        val screenPaddingsIgnoringSticky = screenPaddings(
+            hasStickyBottom = false,
+            append = padding,
+            topSpacing = topSpacing
+        )
 
         Box(
             modifier = Modifier.fillMaxSize()
@@ -130,25 +181,44 @@ fun ContentScreen(
             if (contentErrorConfig != null) {
                 ContentError(
                     config = contentErrorConfig,
-                    paddingValues = screenPaddings(padding)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(screenPaddingsIgnoringSticky)
                 )
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (imePaddingConfig == ImePaddingConfig.ONLY_CONTENT) {
+                                Modifier.imePadding()
+                            } else {
+                                Modifier
+                            }
+                        )
+                ) {
 
                     Box(modifier = Modifier.weight(1f)) {
-                        bodyContent(screenPaddings(padding, topSpacing))
+                        bodyContent(
+                            screenPaddings(
+                                hasStickyBottom = stickyBottom != null,
+                                append = padding,
+                                topSpacing = topSpacing
+                            )
+                        )
                     }
 
                     stickyBottom?.let { stickyBottomContent ->
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .navigationBarsPadding()
                                 .zIndex(Z_STICKY),
                             contentAlignment = Alignment.Center
                         ) {
                             stickyBottomContent(
                                 stickyBottomPaddings(
-                                    contentScreenPaddings = screenPaddings(padding),
+                                    contentScreenPaddings = screenPaddingsIgnoringSticky,
                                     layoutDirection = LocalLayoutDirection.current
                                 )
                             )
@@ -200,7 +270,7 @@ private fun DefaultToolBar(
                     else -> AppIcons.ArrowBack
                 }
 
-                ToolbarIcon(
+                ToolbarItem(
                     toolbarAction = ToolbarActionUi(
                         icon = navigationIcon,
                         onClick = {
@@ -213,31 +283,35 @@ private fun DefaultToolBar(
         },
         // Add toolbar actions.
         actions = {
-            ToolBarActions(toolBarActions = toolbarConfig?.actions)
+            ToolBarActions(
+                toolBarActions = toolbarConfig?.actions,
+                overflowThreshold = toolbarConfig?.maxVisibleActions ?: MAX_TOOLBAR_ACTIONS
+            )
         }
     )
 }
 
 @Composable
 internal fun ToolBarActions(
-    toolBarActions: List<ToolbarActionUi>?
+    toolBarActions: List<ToolbarActionUi>?,
+    overflowThreshold: Int,
 ) {
     toolBarActions?.let { actions ->
 
         var dropDownMenuExpanded by remember { mutableStateOf(false) }
 
-        // Show first [MAX_TOOLBAR_ACTIONS] actions.
+        // Show first [overflowThreshold] actions.
         actions
             .sortedByDescending { it.order }
-            .take(MAX_TOOLBAR_ACTIONS)
+            .take(overflowThreshold)
             .map { visibleToolbarAction ->
-                ToolbarIcon(toolbarAction = visibleToolbarAction)
+                ToolbarItem(toolbarAction = visibleToolbarAction)
             }
 
         // Check if there are more actions to show.
-        if (actions.size > MAX_TOOLBAR_ACTIONS) {
+        if (actions.size > overflowThreshold) {
             Box {
-                ToolbarIcon(
+                ToolbarItem(
                     toolbarAction = ToolbarActionUi(
                         icon = AppIcons.VerticalMore,
                         onClick = { dropDownMenuExpanded = !dropDownMenuExpanded },
@@ -246,13 +320,17 @@ internal fun ToolBarActions(
                 )
                 DropdownMenu(
                     expanded = dropDownMenuExpanded,
-                    onDismissRequest = { dropDownMenuExpanded = false }
+                    onDismissRequest = { dropDownMenuExpanded = false },
+                    shape = RoundedCornerShape(SIZE_EXTRA_SMALL.dp)
                 ) {
                     actions
                         .sortedByDescending { it.order }
-                        .drop(MAX_TOOLBAR_ACTIONS)
+                        .drop(overflowThreshold)
                         .map { dropDownMenuToolbarAction ->
-                            ToolbarIcon(toolbarAction = dropDownMenuToolbarAction)
+                            ToolbarItem(
+                                toolbarAction = dropDownMenuToolbarAction,
+                                onItemClicked = { dropDownMenuExpanded = false }
+                            )
                         }
                 }
             }
@@ -261,31 +339,81 @@ internal fun ToolBarActions(
 }
 
 @Composable
-private fun ToolbarIcon(toolbarAction: ToolbarActionUi) {
+private fun ToolbarItem(
+    toolbarAction: ToolbarActionUi,
+    onItemClicked: () -> Unit = {}
+) {
     val customIconTint = toolbarAction.customTint
         ?: MaterialTheme.colorScheme.onSurface
 
-    if (toolbarAction.clickable) {
-        WrapIconButton(
-            iconData = toolbarAction.icon,
-            onClick = toolbarAction.onClick,
-            enabled = toolbarAction.enabled,
-            customTint = customIconTint,
-            throttleClicks = toolbarAction.throttleClicks
-        )
-    } else {
-        WrapIcon(
-            modifier = Modifier.minimumInteractiveComponentSize(),
-            iconData = toolbarAction.icon,
-            enabled = toolbarAction.enabled,
-            customTint = customIconTint,
-        )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        toolbarAction.icon?.let { safeIcon ->
+            if (toolbarAction.clickable) {
+                WrapIconButton(
+                    iconData = safeIcon,
+                    onClick = {
+                        toolbarAction.onClick()
+                        onItemClicked()
+                    },
+                    enabled = toolbarAction.enabled,
+                    customTint = customIconTint,
+                    throttleClicks = toolbarAction.throttleClicks
+                )
+            } else {
+                WrapIcon(
+                    modifier = Modifier.minimumInteractiveComponentSize(),
+                    iconData = safeIcon,
+                    enabled = toolbarAction.enabled,
+                    customTint = customIconTint,
+                )
+            }
+        }
+
+        toolbarAction.text?.let { safeText ->
+            val textClickModifier: Modifier = if (toolbarAction.clickable) {
+                if (toolbarAction.throttleClicks) {
+                    Modifier.throttledClickable(
+                        enabled = toolbarAction.enabled,
+                        onClick = {
+                            toolbarAction.onClick()
+                            onItemClicked()
+                        }
+                    )
+                } else {
+                    Modifier.clickable(
+                        enabled = toolbarAction.enabled,
+                        onClick = {
+                            toolbarAction.onClick()
+                            onItemClicked()
+                        }
+                    )
+                }
+            } else {
+                Modifier
+            }
+
+            Text(
+                text = safeText,
+                modifier = Modifier
+                    .then(textClickModifier)
+                    .padding(vertical = SPACING_SMALL.dp, horizontal = 12.dp)
+                    .padding(end = SPACING_XX_LARGE.dp)
+                    .alpha(
+                        if (toolbarAction.enabled) ALPHA_ENABLED
+                        else ALPHA_DISABLED
+                    ),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
     }
 }
 
 @ThemeModePreviews
 @Composable
-private fun ToolbarIconClickablePreview() {
+private fun ToolbarItemClickablePreview() {
     PreviewTheme {
         val action = ToolbarActionUi(
             icon = AppIcons.Verified,
@@ -294,13 +422,13 @@ private fun ToolbarIconClickablePreview() {
             clickable = true,
         )
 
-        ToolbarIcon(toolbarAction = action)
+        ToolbarItem(toolbarAction = action)
     }
 }
 
 @ThemeModePreviews
 @Composable
-private fun ToolbarIconNotClickablePreview() {
+private fun ToolbarItemNotClickablePreview() {
     PreviewTheme {
         val action = ToolbarActionUi(
             icon = AppIcons.Verified,
@@ -309,7 +437,7 @@ private fun ToolbarIconNotClickablePreview() {
             clickable = false,
         )
 
-        ToolbarIcon(toolbarAction = action)
+        ToolbarItem(toolbarAction = action)
     }
 }
 
@@ -345,7 +473,10 @@ private fun ToolBarActionsWithFourActionsPreview() {
         )
 
         Row {
-            ToolBarActions(toolBarActions)
+            ToolBarActions(
+                toolBarActions = toolBarActions,
+                overflowThreshold = MAX_TOOLBAR_ACTIONS,
+            )
         }
     }
 }

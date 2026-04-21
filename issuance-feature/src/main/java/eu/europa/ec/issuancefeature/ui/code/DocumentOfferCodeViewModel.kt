@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -21,6 +21,7 @@ import androidx.lifecycle.viewModelScope
 import eu.europa.ec.commonfeature.config.IssuanceSuccessUiConfig
 import eu.europa.ec.commonfeature.config.OfferCodeUiConfig
 import eu.europa.ec.eudi.wallet.document.DocumentId
+import eu.europa.ec.issuancefeature.di.getOrCreateCredentialOfferScope
 import eu.europa.ec.issuancefeature.interactor.DocumentOfferInteractor
 import eu.europa.ec.issuancefeature.interactor.IssueDocumentsInteractorPartialState
 import eu.europa.ec.resourceslogic.R
@@ -36,8 +37,8 @@ import eu.europa.ec.uilogic.navigation.helper.generateComposableArguments
 import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
 import eu.europa.ec.uilogic.serializer.UiSerializer
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 
 private typealias PinCode = String
 
@@ -70,11 +71,19 @@ sealed class Effect : ViewSideEffect {
 
 @KoinViewModel
 class DocumentOfferCodeViewModel(
-    private val documentOfferInteractor: DocumentOfferInteractor,
     private val resourceProvider: ResourceProvider,
     private val uiSerializer: UiSerializer,
-    @InjectedParam private val offerCodeSerializedConfig: String
+    @InjectedParam private val offerCodeSerializedConfig: String,
+    documentOfferInteractor: DocumentOfferInteractor? = null
 ) : MviViewModel<Event, State, Effect>() {
+
+    private var _documentOfferInteractor: DocumentOfferInteractor? = documentOfferInteractor
+
+    private val documentOfferInteractor: DocumentOfferInteractor
+        get() = _documentOfferInteractor
+            ?: getOrCreateCredentialOfferScope().get<DocumentOfferInteractor>().also {
+                _documentOfferInteractor = it
+            }
 
     override fun setInitialState(): State {
         val deserializedOfferCodeUiConfig = uiSerializer.fromBase64(
@@ -103,15 +112,24 @@ class DocumentOfferCodeViewModel(
             is Event.OnPinChange -> {
                 if (event.code.isPinValid()) {
                     issueDocuments(
-                        event.context,
-                        event.code
+                        context = event.context,
+                        offerUri = viewState.value.offerCodeUiConfig.offerUri,
+                        issuerName = viewState.value.offerCodeUiConfig.issuerName,
+                        onSuccessNavigation = viewState.value.offerCodeUiConfig.onSuccessNavigation,
+                        pinCode = event.code
                     )
                 }
             }
         }
     }
 
-    private fun issueDocuments(context: Context, pinCode: PinCode) {
+    private fun issueDocuments(
+        context: Context,
+        offerUri: String,
+        issuerName: String,
+        onSuccessNavigation: ConfigNavigation,
+        pinCode: PinCode
+    ) {
         viewModelScope.launch {
 
             setState {
@@ -122,9 +140,9 @@ class DocumentOfferCodeViewModel(
             }
 
             documentOfferInteractor.issueDocuments(
-                offerUri = viewState.value.offerCodeUiConfig.offerURI,
-                issuerName = viewState.value.offerCodeUiConfig.issuerName,
-                navigation = viewState.value.offerCodeUiConfig.onSuccessNavigation,
+                offerUri = offerUri,
+                issuerName = issuerName,
+                navigation = onSuccessNavigation,
                 txCode = pinCode
             ).collect { response ->
                 when (response) {
@@ -139,6 +157,7 @@ class DocumentOfferCodeViewModel(
                     }
 
                     is IssueDocumentsInteractorPartialState.Success -> {
+
                         setState {
                             copy(
                                 isLoading = false,

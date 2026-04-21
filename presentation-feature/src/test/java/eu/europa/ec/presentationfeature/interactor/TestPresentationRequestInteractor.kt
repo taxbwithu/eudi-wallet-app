@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -403,11 +403,13 @@ class TestPresentationRequestInteractor {
             PresentationMode.Ble(initiatorRoute = mockedInitiatorRoute)
         )
         // When
-        interactor.setConfig(config = requestConfig)
+        interactor.setConfig(config = requestConfig, intentAction = null)
 
         // Then
         verify(walletCorePresentationController, times(1))
-            .setConfig(config = requestConfig.toDomainConfig())
+            .setConfig(config = requestConfig.toDomainConfig(intentAction = null))
+
+        assertEquals(interactor.presentationScopeId, "ble_presentation_scope_id")
     }
     //endregion
 

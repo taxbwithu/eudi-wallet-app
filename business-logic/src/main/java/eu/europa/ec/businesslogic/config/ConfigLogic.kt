@@ -32,11 +32,6 @@ interface ConfigLogic {
     val appFlavor: AppFlavor
 
     /**
-     * Server Environment Configuration.
-     */
-    val environmentConfig: EnvironmentConfig
-
-    /**
      * Application version.
      */
     val appVersion: String get() = BuildConfig.APP_VERSION
@@ -58,6 +53,11 @@ interface ConfigLogic {
      *   changelog is maintained for development builds.
      */
     val changelogUrl: String?
+
+    /**
+     * Set if the wallet requires PID Activation.
+     */
+    val forcePidActivation: Boolean get() = false
 }
 
 enum class AppFlavor {
@@ -74,24 +74,5 @@ enum class AppBuildType {
                 else -> RELEASE
             }
         }
-    }
-}
-
-abstract class EnvironmentConfig {
-    val environment: ServerConfig
-        get() {
-            return when (AppBuildType.getType()) {
-                AppBuildType.DEBUG -> ServerConfig.Debug
-                AppBuildType.RELEASE -> ServerConfig.Release
-            }
-        }
-
-    val connectTimeoutSeconds: Long get() = 60
-    val readTimeoutSeconds: Long get() = 60
-
-    abstract fun getServerHost(): String
-    sealed class ServerConfig {
-        data object Debug : ServerConfig()
-        data object Release : ServerConfig()
     }
 }

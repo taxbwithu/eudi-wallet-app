@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -20,18 +20,18 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import eu.europa.ec.authenticationlogic.controller.authentication.DeviceAuthenticationResult
-import eu.europa.ec.commonfeature.config.IssuanceFlowUiConfig
+import eu.europa.ec.commonfeature.config.IssuanceFlowType
 import eu.europa.ec.commonfeature.config.IssuanceSuccessUiConfig
+import eu.europa.ec.commonfeature.config.IssuanceUiConfig
 import eu.europa.ec.commonfeature.config.OfferUiConfig
 import eu.europa.ec.commonfeature.config.PresentationMode
 import eu.europa.ec.commonfeature.config.QrScanFlow
 import eu.europa.ec.commonfeature.config.QrScanUiConfig
 import eu.europa.ec.commonfeature.config.RequestUriConfig
 import eu.europa.ec.corelogic.controller.IssuanceMethod
-import eu.europa.ec.corelogic.controller.IssueDocumentPartialState
-import eu.europa.ec.corelogic.di.getOrCreatePresentationScope
 import eu.europa.ec.issuancefeature.interactor.AddDocumentInteractor
-import eu.europa.ec.issuancefeature.interactor.AddDocumentInteractorPartialState
+import eu.europa.ec.issuancefeature.interactor.AddDocumentInteractorIssueDocumentsPartialState
+import eu.europa.ec.issuancefeature.interactor.AddDocumentInteractorScopedPartialState
 import eu.europa.ec.issuancefeature.ui.add.model.AddDocumentUi
 import eu.europa.ec.resourceslogic.R
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
@@ -55,12 +55,14 @@ import eu.europa.ec.uilogic.navigation.helper.hasDeepLink
 import eu.europa.ec.uilogic.serializer.UiSerializer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 
 data class State(
     val navigatableAction: ScreenNavigateAction,
     val onBackAction: (() -> Unit)? = null,
+
+    val issuanceConfig: IssuanceUiConfig,
 
     val isLoading: Boolean = false,
     val error: ContentErrorConfig? = null,
@@ -69,7 +71,8 @@ data class State(
 
     val title: String = "",
     val subtitle: String = "",
-    val options: List<AddDocumentUi> = emptyList(),
+    val options: List<Pair<String, List<AddDocumentUi>>> = emptyList(),
+    val noOptions: Boolean = false,
     val showFooterScanner: Boolean,
 ) : ViewState
 
@@ -84,7 +87,8 @@ sealed class Event : ViewEvent {
     data object DismissError : Event()
     data class IssueDocument(
         val issuanceMethod: IssuanceMethod,
-        val configId: String,
+        val issuerId: String,
+        val configIds: List<String>,
         val context: Context
     ) : Event()
 }
@@ -103,18 +107,27 @@ class AddDocumentViewModel(
     private val addDocumentInteractor: AddDocumentInteractor,
     private val resourceProvider: ResourceProvider,
     private val uiSerializer: UiSerializer,
-    @InjectedParam private val flowType: IssuanceFlowUiConfig,
+    @InjectedParam private val issuanceConfig: String,
 ) : MviViewModel<Event, State, Effect>() {
 
     private var issuanceJob: Job? = null
 
-    override fun setInitialState(): State = State(
-        navigatableAction = getNavigatableAction(flowType),
-        onBackAction = getOnBackAction(flowType),
-        title = resourceProvider.getString(R.string.issuance_add_document_title),
-        subtitle = resourceProvider.getString(R.string.issuance_add_document_subtitle),
-        showFooterScanner = shouldShowFooterScanner(flowType),
-    )
+    override fun setInitialState(): State {
+        val deserializedConfig: IssuanceUiConfig = uiSerializer.fromBase64(
+            payload = issuanceConfig,
+            model = IssuanceUiConfig::class.java,
+            parser = IssuanceUiConfig.Parser
+        ) ?: throw RuntimeException("IssuanceUiConfig:: is Missing or invalid")
+
+        return State(
+            issuanceConfig = deserializedConfig,
+            navigatableAction = getNavigatableAction(deserializedConfig.flowType),
+            onBackAction = getOnBackAction(deserializedConfig.flowType),
+            title = resourceProvider.getString(R.string.issuance_add_document_title),
+            subtitle = resourceProvider.getString(R.string.issuance_add_document_subtitle),
+            showFooterScanner = shouldShowFooterScanner(deserializedConfig.flowType),
+        )
+    }
 
     override fun handleEvents(event: Event) {
         when (event) {
@@ -135,7 +148,8 @@ class AddDocumentViewModel(
             is Event.IssueDocument -> {
                 issueDocument(
                     issuanceMethod = event.issuanceMethod,
-                    configId = event.configId,
+                    configIds = event.configIds,
+                    issuerId = event.issuerId,
                     context = event.context
                 )
             }
@@ -156,7 +170,6 @@ class AddDocumentViewModel(
             }
 
             is Event.OnDynamicPresentation -> {
-                getOrCreatePresentationScope()
                 setEffect {
                     Effect.Navigation.SwitchScreen(
                         generateComposableNavigationLink(
@@ -196,13 +209,19 @@ class AddDocumentViewModel(
         }
 
         viewModelScope.launch {
-            addDocumentInteractor.getAddDocumentOption(flowType).collect { response ->
+            addDocumentInteractor.getAddDocumentOption(
+                flowType = viewState.value.issuanceConfig.flowType
+            ).collect { response ->
                 when (response) {
-                    is AddDocumentInteractorPartialState.Success -> {
+                    is AddDocumentInteractorScopedPartialState.Success -> {
                         setState {
                             copy(
                                 error = null,
                                 options = response.options,
+                                noOptions = false,
+                                showFooterScanner = shouldShowFooterScanner(
+                                    flowType = viewState.value.issuanceConfig.flowType
+                                ),
                                 isInitialised = true,
                                 isLoading = false
                             )
@@ -210,7 +229,7 @@ class AddDocumentViewModel(
                         handleDeepLink(deepLinkUri)
                     }
 
-                    is AddDocumentInteractorPartialState.Failure -> {
+                    is AddDocumentInteractorScopedPartialState.Failure -> {
 
                         val deepLinkAction = getDeepLinkAction(deepLinkUri)
 
@@ -226,12 +245,27 @@ class AddDocumentViewModel(
                                     null
                                 },
                                 options = emptyList(),
+                                noOptions = false,
+                                showFooterScanner = false,
                                 isInitialised = true,
                                 isLoading = false
                             )
                         }
                         deepLinkAction?.let {
                             handleDeepLink(it.first, it.second)
+                        }
+                    }
+
+                    is AddDocumentInteractorScopedPartialState.NoOptions -> {
+                        setState {
+                            copy(
+                                error = null,
+                                options = emptyList(),
+                                noOptions = true,
+                                showFooterScanner = true,
+                                isInitialised = true,
+                                isLoading = false
+                            )
                         }
                     }
                 }
@@ -241,7 +275,8 @@ class AddDocumentViewModel(
 
     private fun issueDocument(
         issuanceMethod: IssuanceMethod,
-        configId: String,
+        issuerId: String,
+        configIds: List<String>,
         context: Context
     ) {
         issuanceJob?.cancel()
@@ -254,12 +289,13 @@ class AddDocumentViewModel(
                 )
             }
 
-            addDocumentInteractor.issueDocument(
+            addDocumentInteractor.issueDocuments(
                 issuanceMethod = issuanceMethod,
-                configId = configId
+                issuerId = issuerId,
+                configIds = configIds
             ).collect { response ->
                 when (response) {
-                    is IssueDocumentPartialState.Failure -> {
+                    is AddDocumentInteractorIssueDocumentsPartialState.Failure -> {
                         setState {
                             copy(
                                 error = ContentErrorConfig(
@@ -272,7 +308,7 @@ class AddDocumentViewModel(
                         }
                     }
 
-                    is IssueDocumentPartialState.Success -> {
+                    is AddDocumentInteractorIssueDocumentsPartialState.Success -> {
                         setState {
                             copy(
                                 error = null,
@@ -280,11 +316,11 @@ class AddDocumentViewModel(
                             )
                         }
                         navigateToDocumentIssuanceSuccessScreen(
-                            documentId = response.documentId
+                            documentIds = response.documentIds
                         )
                     }
 
-                    is IssueDocumentPartialState.DeferredSuccess -> {
+                    is AddDocumentInteractorIssueDocumentsPartialState.DeferredSuccess -> {
                         setState {
                             copy(
                                 error = null,
@@ -293,12 +329,12 @@ class AddDocumentViewModel(
                         }
                         navigateToGenericSuccessScreen(
                             route = addDocumentInteractor.buildGenericSuccessRouteForDeferred(
-                                flowType
+                                viewState.value.issuanceConfig.flowType
                             )
                         )
                     }
 
-                    is IssueDocumentPartialState.UserAuthRequired -> {
+                    is AddDocumentInteractorIssueDocumentsPartialState.UserAuthRequired -> {
                         addDocumentInteractor.handleUserAuth(
                             context = context,
                             crypto = response.crypto,
@@ -318,16 +354,16 @@ class AddDocumentViewModel(
         }
     }
 
-    private fun navigateToDocumentIssuanceSuccessScreen(documentId: String) {
-        val onSuccessNavigation = when (flowType) {
-            IssuanceFlowUiConfig.NO_DOCUMENT -> ConfigNavigation(
+    private fun navigateToDocumentIssuanceSuccessScreen(documentIds: List<String>) {
+        val onSuccessNavigation = when (viewState.value.issuanceConfig.flowType) {
+            is IssuanceFlowType.NoDocument -> ConfigNavigation(
                 navigationType = NavigationType.PushScreen(
                     screen = DashboardScreens.Dashboard,
                     popUpToScreen = IssuanceScreens.AddDocument
                 )
             )
 
-            IssuanceFlowUiConfig.EXTRA_DOCUMENT -> ConfigNavigation(
+            is IssuanceFlowType.ExtraDocument -> ConfigNavigation(
                 navigationType = NavigationType.PopTo(
                     screen = DashboardScreens.Dashboard
                 )
@@ -342,7 +378,7 @@ class AddDocumentViewModel(
                         mapOf(
                             IssuanceSuccessUiConfig.serializedKeyName to uiSerializer.toBase64(
                                 model = IssuanceSuccessUiConfig(
-                                    documentIds = listOf(documentId),
+                                    documentIds = documentIds,
                                     onSuccessNavigation = onSuccessNavigation,
                                 ),
                                 parser = IssuanceSuccessUiConfig.Parser
@@ -375,7 +411,7 @@ class AddDocumentViewModel(
                                 QrScanUiConfig(
                                     title = resourceProvider.getString(R.string.issuance_qr_scan_title),
                                     subTitle = resourceProvider.getString(R.string.issuance_qr_scan_subtitle),
-                                    qrScanFlow = QrScanFlow.Issuance(flowType)
+                                    qrScanFlow = QrScanFlow.Issuance(viewState.value.issuanceConfig.flowType)
                                 ),
                                 QrScanUiConfig.Parser
                             )
@@ -387,27 +423,27 @@ class AddDocumentViewModel(
         }
     }
 
-    private fun shouldShowFooterScanner(flowType: IssuanceFlowUiConfig): Boolean {
+    private fun shouldShowFooterScanner(flowType: IssuanceFlowType): Boolean {
         return when (flowType) {
-            IssuanceFlowUiConfig.NO_DOCUMENT -> true
-            IssuanceFlowUiConfig.EXTRA_DOCUMENT -> false
+            is IssuanceFlowType.NoDocument -> true
+            is IssuanceFlowType.ExtraDocument -> false
         }
     }
 
-    private fun getNavigatableAction(flowType: IssuanceFlowUiConfig): ScreenNavigateAction {
+    private fun getNavigatableAction(flowType: IssuanceFlowType): ScreenNavigateAction {
         return when (flowType) {
-            IssuanceFlowUiConfig.NO_DOCUMENT -> ScreenNavigateAction.NONE
-            IssuanceFlowUiConfig.EXTRA_DOCUMENT -> ScreenNavigateAction.BACKABLE
+            is IssuanceFlowType.NoDocument -> ScreenNavigateAction.NONE
+            is IssuanceFlowType.ExtraDocument -> ScreenNavigateAction.BACKABLE
         }
     }
 
-    private fun getOnBackAction(flowType: IssuanceFlowUiConfig): (() -> Unit) {
+    private fun getOnBackAction(flowType: IssuanceFlowType): (() -> Unit) {
         return when (flowType) {
-            IssuanceFlowUiConfig.NO_DOCUMENT -> {
+            is IssuanceFlowType.NoDocument -> {
                 { setEvent(Event.Finish) }
             }
 
-            IssuanceFlowUiConfig.EXTRA_DOCUMENT -> {
+            is IssuanceFlowType.ExtraDocument -> {
                 { setEvent(Event.Pop) }
             }
         }
@@ -437,7 +473,7 @@ class AddDocumentViewModel(
                             mapOf(
                                 OfferUiConfig.serializedKeyName to uiSerializer.toBase64(
                                     OfferUiConfig(
-                                        offerURI = action.link.toString(),
+                                        offerUri = action.link.toString(),
                                         onSuccessNavigation = ConfigNavigation(
                                             navigationType = NavigationType.PushScreen(
                                                 screen = DashboardScreens.Dashboard,

@@ -19,7 +19,6 @@ package eu.europa.ec.uilogic.component.content
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,6 +40,7 @@ import eu.europa.ec.uilogic.component.utils.SPACING_MEDIUM
 import eu.europa.ec.uilogic.component.utils.SPACING_SMALL
 import eu.europa.ec.uilogic.component.wrap.TextConfig
 import eu.europa.ec.uilogic.component.wrap.WrapText
+import eu.europa.ec.uilogic.extension.optionalTestTag
 
 /**
  * Data class representing the configuration for a content header.
@@ -76,6 +76,7 @@ data class ContentHeaderConfig(
 fun ContentHeader(
     modifier: Modifier = Modifier,
     config: ContentHeaderConfig,
+    descriptionTestTag: String? = null,
 ) {
     val commonTextAlign = TextAlign.Center
 
@@ -87,8 +88,8 @@ fun ContentHeader(
             // App icon and text section.
             AppIconAndText(
                 modifier = Modifier
-                    .size(150.dp)
-                    .padding(vertical = SPACING_SMALL.dp, horizontal = SPACING_SMALL.dp),
+                    .fillMaxWidth()
+                    .padding(vertical = SPACING_LARGE.dp),
                 appIconAndTextData = appIconAndTextData,
             )
 
@@ -97,6 +98,7 @@ fun ContentHeader(
                 WrapText(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .optionalTestTag(descriptionTestTag)
                         .padding(vertical = SPACING_SMALL.dp),
                     text = safeDescription,
                     textConfig = descriptionTextConfig ?: TextConfig(

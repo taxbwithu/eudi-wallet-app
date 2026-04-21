@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -17,6 +17,9 @@
 package eu.europa.ec.dashboardfeature.ui.documents.detail.transformer
 
 import eu.europa.ec.businesslogic.provider.UuidProvider
+import eu.europa.ec.businesslogic.util.DAY_MONTH_YEAR_FULL_PATTERN
+import eu.europa.ec.businesslogic.util.FULL_DATETIME_PATTERN_24H_SEPARATED_BY_DASH
+import eu.europa.ec.businesslogic.util.formatInstant
 import eu.europa.ec.commonfeature.extension.toExpandableListItems
 import eu.europa.ec.commonfeature.util.transformPathsToDomainClaims
 import eu.europa.ec.corelogic.extension.toClaimPaths
@@ -31,7 +34,7 @@ import eu.europa.ec.resourceslogic.provider.ResourceProvider
 
 object DocumentDetailsTransformer {
 
-    fun transformToDocumentDetailsDomain(
+    suspend fun transformToDocumentDetailsDomain(
         document: IssuedDocument,
         resourceProvider: ResourceProvider,
         uuidProvider: UuidProvider
@@ -50,8 +53,16 @@ object DocumentDetailsTransformer {
         return@runCatching DocumentDetailsDomain(
             docName = document.name,
             docId = document.id,
+            issuerId = document.issuerMetadata?.credentialIssuerIdentifier.orEmpty(),
+            documentConfigId = document.issuerMetadata?.documentConfigurationIdentifier.orEmpty(),
             documentIdentifier = document.toDocumentIdentifier(),
             documentClaims = domainClaims,
+            documentIssuanceDate = document.issuedAt.formatInstant(
+                pattern = FULL_DATETIME_PATTERN_24H_SEPARATED_BY_DASH
+            ),
+            documentExpirationDate = document.getValidUntil().getOrNull()?.formatInstant(
+                pattern = DAY_MONTH_YEAR_FULL_PATTERN
+            ),
         )
     }
 
@@ -62,6 +73,8 @@ object DocumentDetailsTransformer {
         return DocumentDetailsUi(
             documentId = this.docId,
             documentName = this.docName,
+            issuerId = this.issuerId,
+            documentConfigId = this.documentConfigId,
             documentIdentifier = this.documentIdentifier,
             documentIssuanceStateUi = DocumentIssuanceStateUi.Issued,
             documentClaims = documentDetailsUi,
@@ -82,14 +95,6 @@ object DocumentDetailsTransformer {
                 R.string.document_details_document_credentials_info_text,
                 availableCredentials,
                 totalCredentials
-            ),
-            collapsedInfo = DocumentCredentialsInfoUi.CollapsedInfo(
-                moreInfoText = resourceProvider.getString(R.string.document_details_document_credentials_info_more_info_text),
-            ),
-            expandedInfo = DocumentCredentialsInfoUi.ExpandedInfo(
-                subtitle = resourceProvider.getString(R.string.document_details_document_credentials_info_expanded_text_subtitle),
-                updateNowButtonText = null,
-                hideButtonText = resourceProvider.getString(R.string.document_details_document_credentials_info_expanded_button_hide_text),
             )
         )
     }

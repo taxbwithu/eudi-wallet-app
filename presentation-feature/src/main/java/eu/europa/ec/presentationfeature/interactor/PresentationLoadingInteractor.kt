@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -17,10 +17,13 @@
 package eu.europa.ec.presentationfeature.interactor
 
 import android.content.Context
+import android.content.Intent
 import eu.europa.ec.authenticationlogic.controller.authentication.BiometricsAvailability
 import eu.europa.ec.authenticationlogic.controller.authentication.DeviceAuthenticationResult
 import eu.europa.ec.authenticationlogic.model.BiometricCrypto
 import eu.europa.ec.commonfeature.interactor.DeviceAuthenticationInteractor
+import eu.europa.ec.commonfeature.interactor.ScopedPresentationInteractor
+import eu.europa.ec.commonfeature.interactor.ScopedPresentationInteractorDelegate
 import eu.europa.ec.corelogic.controller.SendRequestedDocumentsPartialState
 import eu.europa.ec.corelogic.controller.WalletCorePartialState
 import eu.europa.ec.corelogic.controller.WalletCorePresentationController
@@ -38,6 +41,7 @@ sealed class PresentationLoadingObserveResponsePartialState {
     data object Success : PresentationLoadingObserveResponsePartialState()
     data class Redirect(val uri: URI) : PresentationLoadingObserveResponsePartialState()
     data object RequestReadyToBeSent : PresentationLoadingObserveResponsePartialState()
+    data class IntentToSend(val intent: Intent) : PresentationLoadingObserveResponsePartialState()
 }
 
 sealed class PresentationLoadingSendRequestedDocumentPartialState {
@@ -45,7 +49,7 @@ sealed class PresentationLoadingSendRequestedDocumentPartialState {
     data object Success : PresentationLoadingSendRequestedDocumentPartialState()
 }
 
-interface PresentationLoadingInteractor {
+interface PresentationLoadingInteractor : ScopedPresentationInteractor {
     fun observeResponse(): Flow<PresentationLoadingObserveResponsePartialState>
     fun sendRequestedDocuments(): PresentationLoadingSendRequestedDocumentPartialState
     fun handleUserAuthentication(
@@ -57,9 +61,10 @@ interface PresentationLoadingInteractor {
 }
 
 class PresentationLoadingInteractorImpl(
-    private val walletCorePresentationController: WalletCorePresentationController,
     private val deviceAuthenticationInteractor: DeviceAuthenticationInteractor,
-) : PresentationLoadingInteractor {
+    walletCorePresentationController: WalletCorePresentationController? = null
+) : PresentationLoadingInteractor,
+    ScopedPresentationInteractorDelegate(walletCorePresentationController) {
 
     override fun observeResponse(): Flow<PresentationLoadingObserveResponsePartialState> =
         walletCorePresentationController.observeSentDocumentsRequest().mapNotNull { response ->
@@ -83,6 +88,12 @@ class PresentationLoadingInteractorImpl(
                 }
 
                 is WalletCorePartialState.RequestIsReadyToBeSent -> PresentationLoadingObserveResponsePartialState.RequestReadyToBeSent
+
+                is WalletCorePartialState.IntentToSend -> {
+                    PresentationLoadingObserveResponsePartialState.IntentToSend(
+                        intent = response.intent
+                    )
+                }
             }
         }
 

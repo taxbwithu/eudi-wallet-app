@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,8 +42,10 @@ import androidx.navigation.NavController
 import eu.europa.ec.commonfeature.ui.request.model.DocumentPayloadDomain
 import eu.europa.ec.commonfeature.ui.request.model.DomainDocumentFormat
 import eu.europa.ec.commonfeature.ui.request.model.RequestDocumentItemUi
+import eu.europa.ec.commonfeature.util.TestTag
 import eu.europa.ec.corelogic.model.ClaimDomain
 import eu.europa.ec.corelogic.model.ClaimPathDomain
+import eu.europa.ec.corelogic.model.ClaimType
 import eu.europa.ec.resourceslogic.R
 import eu.europa.ec.resourceslogic.theme.values.warning
 import eu.europa.ec.uilogic.component.AppIcons
@@ -73,6 +76,9 @@ import eu.europa.ec.uilogic.component.wrap.TextConfig
 import eu.europa.ec.uilogic.component.wrap.WrapExpandableListItem
 import eu.europa.ec.uilogic.component.wrap.WrapModalBottomSheet
 import eu.europa.ec.uilogic.component.wrap.WrapStickyBottomContent
+import eu.europa.ec.uilogic.extension.applyTestTag
+import eu.europa.ec.uilogic.extension.finish
+import eu.europa.ec.uilogic.navigation.helper.IntentAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -84,24 +90,28 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestScreen(
+    intentAction: IntentAction?,
     navController: NavController,
     viewModel: RequestViewModel,
 ) {
     val state: State by viewModel.viewState.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+
     val isBottomSheetOpen = state.isBottomSheetOpen
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
+        skipPartiallyExpanded = true
     )
 
     ContentScreen(
         navigatableAction = ScreenNavigateAction.BACKABLE,
         isLoading = state.isLoading,
-        onBack = { viewModel.setEvent(Event.Pop) },
+        onBack = { viewModel.setEvent(Event.OnBack) },
         stickyBottom = { paddingValues ->
             WrapStickyBottomContent(
-                stickyBottomModifier = Modifier
+                modifier = Modifier
+                    .applyTestTag(TestTag.RequestScreen.BUTTON)
                     .fillMaxWidth()
                     .padding(paddingValues),
                 stickyBottomConfig = StickyBottomConfig(
@@ -140,6 +150,10 @@ fun RequestScreen(
                             inclusive = false
                         )
                     }
+
+                    is Effect.Navigation.Finish -> {
+                        context.finish()
+                    }
                 }
             },
             paddingValues = paddingValues,
@@ -166,7 +180,7 @@ fun RequestScreen(
     }
 
     OneTimeLaunchedEffect {
-        viewModel.setEvent(Event.DoWork)
+        viewModel.setEvent(Event.Init(intentAction = intentAction))
     }
 }
 
@@ -196,13 +210,14 @@ private fun Content(
         ContentHeader(
             modifier = Modifier.fillMaxWidth(),
             config = state.headerConfig,
+            descriptionTestTag = TestTag.RequestScreen.CONTENT_HEADER_DESCRIPTION,
         )
 
         // Screen Main Content.
         DisplayRequestItems(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = SPACING_SMALL.dp),
+                .padding(vertical = SPACING_SMALL.dp),
             requestDocuments = state.items,
             noData = state.noItems,
             onEventSend = onEventSend,
@@ -252,9 +267,11 @@ private fun DisplayRequestItems(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(SPACING_MEDIUM.dp)
             ) {
-                requestDocuments.forEach { requestDocument ->
+                requestDocuments.forEachIndexed { index, requestDocument ->
                     WrapExpandableListItem(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .applyTestTag(TestTag.RequestScreen.requestedDocument(index = index))
+                            .fillMaxWidth(),
                         header = requestDocument.headerUi.header,
                         data = requestDocument.headerUi.nestedItems,
                         onItemClick = { item ->
@@ -327,14 +344,17 @@ private fun ContentPreview() {
                         domainPayload = DocumentPayloadDomain(
                             docName = "docName",
                             docId = "docId",
-                            domainDocFormat = DomainDocumentFormat.MsoMdoc(namespace = "pid"),
+                            domainDocFormat = DomainDocumentFormat.MsoMdoc,
                             docClaimsDomain = listOf(
                                 ClaimDomain.Primitive(
                                     key = "key",
                                     displayTitle = "title",
                                     value = "value",
                                     isRequired = false,
-                                    path = ClaimPathDomain(value = listOf())
+                                    path = ClaimPathDomain(
+                                        value = listOf(),
+                                        type = ClaimType.MsoMdoc(namespace = "namespace")
+                                    )
                                 ),
                             )
                         ),

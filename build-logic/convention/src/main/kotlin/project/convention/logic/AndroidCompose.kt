@@ -26,12 +26,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
  * Configure Compose-specific options
  */
 internal fun Project.configureAndroidCompose(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
+    commonExtension: CommonExtension,
 ) {
     commonExtension.apply {
-        buildFeatures {
-            compose = true
-        }
+
+        buildFeatures.compose = true
 
         dependencies {
 
@@ -51,6 +50,8 @@ internal fun Project.configureAndroidCompose(
 
             add("implementation", libs.findLibrary("accompanist-permissions").get())
 
+            add("implementation", libs.findLibrary("compose-cloudy").get())
+
             add("implementation", libs.findLibrary("androidx.constraintlayout.compose").get())
             add("implementation", libs.findLibrary("androidx.compose.ui.tooling.preview").get())
             add("debugImplementation", libs.findLibrary("androidx.compose.ui.tooling").get())
@@ -61,11 +62,9 @@ internal fun Project.configureAndroidCompose(
             add("testImplementation", libs.findLibrary("robolectric").get())
         }
 
-        testOptions {
-            unitTests {
-                isIncludeAndroidResources = true
-                isReturnDefaultValues = true
-            }
+        testOptions.unitTests.apply {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
         }
     }
 

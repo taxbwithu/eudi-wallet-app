@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -16,6 +16,7 @@
 
 package eu.europa.ec.issuancefeature.di
 
+import eu.europa.ec.businesslogic.config.ConfigLogic
 import eu.europa.ec.businesslogic.provider.UuidProvider
 import eu.europa.ec.commonfeature.interactor.DeviceAuthenticationInteractor
 import eu.europa.ec.corelogic.controller.WalletCoreDocumentsController
@@ -28,10 +29,17 @@ import eu.europa.ec.issuancefeature.interactor.DocumentOfferInteractorImpl
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
 import eu.europa.ec.uilogic.serializer.UiSerializer
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Module
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
+import org.koin.mp.KoinPlatform
+
+private const val CREDENTIAL_OFFER_ISSUANCE_SCOPE_ID = "credential_offer_scope_id"
 
 @Module
+@Configuration
 @ComponentScan("eu.europa.ec.issuancefeature")
 class FeatureIssuanceModule
 
@@ -60,16 +68,29 @@ fun provideDocumentIssuanceSuccessInteractor(
     uuIdProvider,
 )
 
-@Factory
+@Scope(CredentialOfferIssuanceScope::class)
+@Scoped
 fun provideDocumentOfferInteractor(
     walletCoreDocumentsController: WalletCoreDocumentsController,
     resourceProvider: ResourceProvider,
     deviceAuthenticationInteractor: DeviceAuthenticationInteractor,
-    uiSerializer: UiSerializer
+    uiSerializer: UiSerializer,
+    configLogic: ConfigLogic
 ): DocumentOfferInteractor =
     DocumentOfferInteractorImpl(
         walletCoreDocumentsController,
         deviceAuthenticationInteractor,
         resourceProvider,
-        uiSerializer
+        uiSerializer,
+        configLogic
     )
+
+@Scope
+class CredentialOfferIssuanceScope
+
+fun getOrCreateCredentialOfferScope(scopeId: String = CREDENTIAL_OFFER_ISSUANCE_SCOPE_ID): org.koin.core.scope.Scope =
+    KoinPlatform.getKoin()
+        .getOrCreateScope<CredentialOfferIssuanceScope>(scopeId)
+
+fun getOrNullCredentialOfferScope(scopeId: String = CREDENTIAL_OFFER_ISSUANCE_SCOPE_ID): org.koin.core.scope.Scope? =
+    KoinPlatform.getKoin().getScopeOrNull(scopeId)

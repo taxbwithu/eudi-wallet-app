@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -21,6 +21,8 @@ import eu.europa.ec.authenticationlogic.controller.authentication.BiometricsAvai
 import eu.europa.ec.authenticationlogic.controller.authentication.DeviceAuthenticationResult
 import eu.europa.ec.authenticationlogic.model.BiometricCrypto
 import eu.europa.ec.commonfeature.interactor.DeviceAuthenticationInteractor
+import eu.europa.ec.commonfeature.interactor.ScopedPresentationInteractor
+import eu.europa.ec.commonfeature.interactor.ScopedPresentationInteractorDelegate
 import eu.europa.ec.corelogic.controller.SendRequestedDocumentsPartialState
 import eu.europa.ec.corelogic.controller.WalletCorePartialState
 import eu.europa.ec.corelogic.controller.WalletCorePresentationController
@@ -43,7 +45,7 @@ sealed class ProximityLoadingSendRequestedDocumentPartialState {
     data object Success : ProximityLoadingSendRequestedDocumentPartialState()
 }
 
-interface ProximityLoadingInteractor {
+interface ProximityLoadingInteractor : ScopedPresentationInteractor {
     fun observeResponse(): Flow<ProximityLoadingObserveResponsePartialState>
     fun sendRequestedDocuments(): ProximityLoadingSendRequestedDocumentPartialState
     fun handleUserAuthentication(
@@ -55,9 +57,10 @@ interface ProximityLoadingInteractor {
 }
 
 class ProximityLoadingInteractorImpl(
-    private val walletCorePresentationController: WalletCorePresentationController,
     private val deviceAuthenticationInteractor: DeviceAuthenticationInteractor,
-) : ProximityLoadingInteractor {
+    walletCorePresentationController: WalletCorePresentationController? = null
+) : ProximityLoadingInteractor,
+    ScopedPresentationInteractorDelegate(walletCorePresentationController) {
 
     override fun observeResponse(): Flow<ProximityLoadingObserveResponsePartialState> =
         walletCorePresentationController.observeSentDocumentsRequest().mapNotNull { response ->
@@ -66,7 +69,8 @@ class ProximityLoadingInteractorImpl(
                     error = response.error
                 )
 
-                is WalletCorePartialState.Redirect -> null
+                is WalletCorePartialState.Redirect,
+                is WalletCorePartialState.IntentToSend -> null
 
                 is WalletCorePartialState.Success -> ProximityLoadingObserveResponsePartialState.Success
                 is WalletCorePartialState.UserAuthenticationRequired -> {

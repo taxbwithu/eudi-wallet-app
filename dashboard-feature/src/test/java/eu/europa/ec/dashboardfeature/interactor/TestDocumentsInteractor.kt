@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -16,7 +16,7 @@
 
 package eu.europa.ec.dashboardfeature.interactor
 
-import eu.europa.ec.businesslogic.controller.storage.PrefKeys
+import eu.europa.ec.businesslogic.config.ConfigLogic
 import eu.europa.ec.businesslogic.validator.FilterValidator
 import eu.europa.ec.businesslogic.validator.FilterValidatorPartialState
 import eu.europa.ec.businesslogic.validator.model.FilterElement.FilterItem
@@ -79,7 +79,7 @@ class TestDocumentsInteractor {
     private lateinit var filterValidator: FilterValidator
 
     @Mock
-    private lateinit var prefKeys: PrefKeys
+    private lateinit var configLogic: ConfigLogic
 
     private lateinit var interactor: DocumentsInteractor
 
@@ -96,10 +96,11 @@ class TestDocumentsInteractor {
             resourceProvider = resourceProvider,
             walletCoreDocumentsController = walletCoreDocumentsController,
             filterValidator = filterValidator,
-            prefKeys = prefKeys,
+            configLogic = configLogic
         )
 
         whenever(resourceProvider.genericErrorMessage()).thenReturn(mockedGenericErrorMessage)
+        whenever(configLogic.forcePidActivation).thenReturn(true)
 
         mockDocumentId = "mockDocumentId"
         mockDocumentName = "mockDocumentName"

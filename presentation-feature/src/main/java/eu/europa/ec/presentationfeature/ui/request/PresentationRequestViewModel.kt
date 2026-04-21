@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -25,6 +25,7 @@ import eu.europa.ec.commonfeature.config.RequestUriConfig
 import eu.europa.ec.commonfeature.ui.request.Event
 import eu.europa.ec.commonfeature.ui.request.RequestViewModel
 import eu.europa.ec.commonfeature.ui.request.model.RequestDocumentItemUi
+import eu.europa.ec.corelogic.di.getOrNullKoinScope
 import eu.europa.ec.presentationfeature.interactor.PresentationRequestInteractor
 import eu.europa.ec.presentationfeature.interactor.PresentationRequestInteractorPartialState
 import eu.europa.ec.resourceslogic.R
@@ -36,12 +37,13 @@ import eu.europa.ec.uilogic.config.ConfigNavigation
 import eu.europa.ec.uilogic.config.NavigationType
 import eu.europa.ec.uilogic.navigation.CommonScreens
 import eu.europa.ec.uilogic.navigation.PresentationScreens
+import eu.europa.ec.uilogic.navigation.helper.IntentAction
 import eu.europa.ec.uilogic.navigation.helper.generateComposableArguments
 import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
 import eu.europa.ec.uilogic.serializer.UiSerializer
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class PresentationRequestViewModel(
@@ -77,7 +79,10 @@ class PresentationRequestViewModel(
                             isPreAuthorization = false,
                             shouldInitializeBiometricAuthOnCreate = true,
                             onSuccessNavigation = ConfigNavigation(
-                                navigationType = NavigationType.PushScreen(PresentationScreens.PresentationLoading),
+                                navigationType = NavigationType.PushScreen(
+                                    screen = PresentationScreens.PresentationLoading,
+                                    arguments = mapOf("scopeId" to viewState.value.presentationScopeId)
+                                ),
                             ),
                             onBackNavigationConfig = OnBackNavigationConfig(
                                 onBackNavigation = ConfigNavigation(
@@ -93,7 +98,27 @@ class PresentationRequestViewModel(
         )
     }
 
+    override fun init(intentAction: IntentAction?) {
+        val requestUriConfig = uiSerializer.fromBase64(
+            requestUriConfigRaw,
+            RequestUriConfig::class.java,
+            RequestUriConfig.Parser
+        ) ?: throw RuntimeException("RequestUriConfig:: is Missing or invalid")
+
+        setState {
+            copy(
+                presentationScopeId = requestUriConfig.presentationScopeId,
+                intentAction = intentAction,
+            )
+        }
+
+        interactor.setConfig(requestUriConfig, intentAction)
+
+        doWork()
+    }
+
     override fun doWork() {
+
         setState {
             copy(
                 isLoading = true,
@@ -101,15 +126,8 @@ class PresentationRequestViewModel(
             )
         }
 
-        val requestUriConfig = uiSerializer.fromBase64(
-            requestUriConfigRaw,
-            RequestUriConfig::class.java,
-            RequestUriConfig.Parser
-        ) ?: throw RuntimeException("RequestUriConfig:: is Missing or invalid")
-
-        interactor.setConfig(requestUriConfig)
-
         viewModelJob = viewModelScope.launch {
+
             interactor.getRequestDocuments().collect { response ->
                 when (response) {
                     is PresentationRequestInteractorPartialState.Failure -> {
@@ -119,7 +137,7 @@ class PresentationRequestViewModel(
                                 error = ContentErrorConfig(
                                     onRetry = { setEvent(Event.DoWork) },
                                     errorSubTitle = response.error,
-                                    onCancel = { setEvent(Event.Pop) }
+                                    onCancel = { setEvent(Event.OnBack) }
                                 )
                             )
                         }
@@ -146,7 +164,7 @@ class PresentationRequestViewModel(
                     }
 
                     is PresentationRequestInteractorPartialState.Disconnect -> {
-                        setEvent(Event.Pop)
+                        setEvent(Event.OnBack)
                     }
 
                     is PresentationRequestInteractorPartialState.NoData -> {
@@ -182,6 +200,7 @@ class PresentationRequestViewModel(
     override fun cleanUp() {
         super.cleanUp()
         interactor.stopPresentation()
+        getOrNullKoinScope(viewState.value.presentationScopeId)?.close()
     }
 
     private fun getRelyingPartyData(

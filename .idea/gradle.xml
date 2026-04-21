@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
@@ -10,24 +11,6 @@
                 <projects>
                   <project path="$PROJECT_DIR$/build-logic" />
                   <project path="$PROJECT_DIR$/build-logic/convention" />
-                </projects>
-              </build>
-              <build path="$PROJECT_DIR$/eudi-document-manager" name="eudi-document-manager">
-                <projects>
-                  <project path="$PROJECT_DIR$/eudi-document-manager" />
-                  <project path="$PROJECT_DIR$/eudi-document-manager/document-manager" />
-                </projects>
-              </build>
-              <build path="$PROJECT_DIR$/eudi-lib-android-wallet-core" name="eudi-lib-android-wallet-core">
-                <projects>
-                  <project path="$PROJECT_DIR$/eudi-lib-android-wallet-core" />
-                  <project path="$PROJECT_DIR$/eudi-lib-android-wallet-core/wallet-core" />
-                </projects>
-              </build>
-              <build path="$PROJECT_DIR$/nimbus-jose-jwt" name="nimbus-jose-jwt">
-                <projects>
-                  <project path="$PROJECT_DIR$/nimbus-jose-jwt" />
-                  <project path="$PROJECT_DIR$/nimbus-jose-jwt/nimbus-jose-jwt" />
                 </projects>
               </build>
             </builds>
@@ -50,14 +33,8 @@
             <option value="$PROJECT_DIR$/common-feature" />
             <option value="$PROJECT_DIR$/core-logic" />
             <option value="$PROJECT_DIR$/dashboard-feature" />
-            <option value="$PROJECT_DIR$/eudi-document-manager" />
-            <option value="$PROJECT_DIR$/eudi-document-manager/document-manager" />
-            <option value="$PROJECT_DIR$/eudi-lib-android-wallet-core" />
-            <option value="$PROJECT_DIR$/eudi-lib-android-wallet-core/wallet-core" />
             <option value="$PROJECT_DIR$/issuance-feature" />
             <option value="$PROJECT_DIR$/network-logic" />
-            <option value="$PROJECT_DIR$/nimbus-jose-jwt" />
-            <option value="$PROJECT_DIR$/nimbus-jose-jwt/nimbus-jose-jwt" />
             <option value="$PROJECT_DIR$/presentation-feature" />
             <option value="$PROJECT_DIR$/proximity-feature" />
             <option value="$PROJECT_DIR$/resources-logic" />

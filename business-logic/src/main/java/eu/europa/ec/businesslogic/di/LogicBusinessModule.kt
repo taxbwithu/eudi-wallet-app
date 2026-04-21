@@ -37,11 +37,13 @@ import eu.europa.ec.businesslogic.validator.FormValidator
 import eu.europa.ec.businesslogic.validator.FormValidatorImpl
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
 @Module
+@Configuration
 @ComponentScan("eu.europa.ec.businesslogic")
 class LogicBusinessModule
 
@@ -68,6 +70,11 @@ fun provideKeystoreController(
 ): KeystoreController =
     KeystoreControllerImpl(prefKeys, logController, uuidProvider)
 
+@Single
+fun provideUuidProvider(): UuidProvider {
+    return UuidProviderImpl()
+}
+
 @Factory
 fun provideCryptoController(keystoreController: KeystoreController): CryptoController =
     CryptoControllerImpl(keystoreController)
@@ -78,8 +85,3 @@ fun provideFormValidator(logController: LogController): FormValidator =
 
 @Factory
 fun provideFiltersValidator(): FilterValidator = FilterValidatorImpl()
-
-@Single
-fun provideUuidProvider(): UuidProvider {
-    return UuidProviderImpl()
-}

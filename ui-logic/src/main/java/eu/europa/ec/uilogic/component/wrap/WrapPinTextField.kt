@@ -67,6 +67,8 @@ import eu.europa.ec.uilogic.component.utils.HSpacer
 import eu.europa.ec.uilogic.component.utils.OneTimeLaunchedEffect
 import eu.europa.ec.uilogic.component.utils.SIZE_SMALL
 import eu.europa.ec.uilogic.component.utils.SPACING_SMALL
+import eu.europa.ec.uilogic.extension.applyTestTag
+import eu.europa.ec.uilogic.util.TestTag
 
 @Composable
 fun WrapPinTextField(
@@ -144,6 +146,7 @@ fun WrapPinTextField(
                     DisableSelection {
                         OutlinedTextField(
                             modifier = Modifier
+                                .applyTestTag(TestTag.pinTextField(currentTextField))
                                 .focusRequester(focusRequesters[currentTextField])
                                 .then(pinWidth?.let { dp ->
                                     Modifier

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -31,11 +31,13 @@ import eu.europa.ec.testlogic.extension.runTest
 import eu.europa.ec.testlogic.extension.toFlow
 import eu.europa.ec.testlogic.rule.CoroutineTestRule
 import junit.framework.TestCase
+import junit.framework.TestCase.assertEquals
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
+import org.mockito.Mockito.mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
@@ -278,9 +280,10 @@ class TestPresentationLoadingInteractor {
     @Test
     fun `Given case 3, When handleUserAuthentication is called, Then Case 3 expected result is returned`() {
         // Given
-        val mockedOnAuthenticationFailure: () -> Unit = {}
-        whenever(resultHandler.onAuthenticationFailure)
-            .thenReturn(mockedOnAuthenticationFailure)
+        val onFailure = mock<() -> Unit>()
+        val resultHandler = DeviceAuthenticationResult(
+            onAuthenticationFailure = onFailure
+        )
 
         mockBiometricsAvailabilityResponse(
             response = BiometricsAvailability.Failure(
@@ -297,8 +300,21 @@ class TestPresentationLoadingInteractor {
         )
 
         // Then
-        verify(resultHandler, times(1))
-            .onAuthenticationFailure
+        verify(onFailure).invoke()
+    }
+    //endregion
+
+    //region setScopeId
+    @Test
+    fun `Given a scopeId, When setScopeId is called, Then Verify presentationScopeId is set to the provided scopeId`() {
+        // Given
+        val mockScopeId = "mockScopeId"
+
+        // When
+        interactor.setScopeId(mockScopeId)
+
+        // Then
+        assertEquals(interactor.presentationScopeId, mockScopeId)
     }
     //endregion
 

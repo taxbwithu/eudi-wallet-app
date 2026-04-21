@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -18,9 +18,8 @@ package eu.europa.ec.proximityfeature.ui.qr
 
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.viewModelScope
-import eu.europa.ec.commonfeature.config.PresentationMode
 import eu.europa.ec.commonfeature.config.RequestUriConfig
-import eu.europa.ec.corelogic.di.getOrCreatePresentationScope
+import eu.europa.ec.corelogic.di.getOrNullKoinScope
 import eu.europa.ec.proximityfeature.interactor.ProximityQRInteractor
 import eu.europa.ec.proximityfeature.interactor.ProximityQRPartialState
 import eu.europa.ec.uilogic.component.content.ContentErrorConfig
@@ -28,21 +27,21 @@ import eu.europa.ec.uilogic.mvi.MviViewModel
 import eu.europa.ec.uilogic.mvi.ViewEvent
 import eu.europa.ec.uilogic.mvi.ViewSideEffect
 import eu.europa.ec.uilogic.mvi.ViewState
-import eu.europa.ec.uilogic.navigation.DashboardScreens
 import eu.europa.ec.uilogic.navigation.ProximityScreens
 import eu.europa.ec.uilogic.navigation.helper.generateComposableArguments
 import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
 import eu.europa.ec.uilogic.serializer.UiSerializer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 
 data class State(
     val isLoading: Boolean = true,
     val error: ContentErrorConfig? = null,
 
     val qrCode: String = "",
+    val presentationScopeId: String = ""
 ) : ViewState
 
 sealed class Event : ViewEvent {
@@ -68,7 +67,7 @@ sealed class Effect : ViewSideEffect {
 class ProximityQRViewModel(
     private val interactor: ProximityQRInteractor,
     private val uiSerializer: UiSerializer,
-    @InjectedParam private val requestUriConfigRaw: String,
+    @InjectedParam private val requestUriConfigRaw: String
 ) : MviViewModel<Event, State, Effect>() {
 
     private var interactorJob: Job? = null
@@ -103,6 +102,10 @@ class ProximityQRViewModel(
             RequestUriConfig::class.java,
             RequestUriConfig.Parser
         ) ?: throw RuntimeException("RequestUriConfig:: is Missing or invalid")
+
+        setState {
+            copy(presentationScopeId = requestUriConfig.presentationScopeId)
+        }
 
         interactor.setConfig(requestUriConfig)
     }
@@ -149,14 +152,7 @@ class ProximityQRViewModel(
                                     screen = ProximityScreens.Request,
                                     arguments = generateComposableArguments(
                                         mapOf(
-                                            RequestUriConfig.serializedKeyName to uiSerializer.toBase64(
-                                                RequestUriConfig(
-                                                    PresentationMode.Ble(
-                                                        DashboardScreens.Dashboard.screenRoute
-                                                    )
-                                                ),
-                                                RequestUriConfig.Parser
-                                            )
+                                            "scopeId" to viewState.value.presentationScopeId
                                         )
                                     )
                                 )
@@ -185,7 +181,7 @@ class ProximityQRViewModel(
      * */
     private fun cleanUp() {
         unsubscribe()
-        getOrCreatePresentationScope().close()
         interactor.cancelTransfer()
+        getOrNullKoinScope(viewState.value.presentationScopeId)?.close()
     }
 }
