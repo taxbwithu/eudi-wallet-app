@@ -27,8 +27,7 @@ class EudiWalletCorePlugin : Plugin<Project> {
                 apply("project.wallet.storage")
             }
             dependencies {
-                add("api", libs.findLibrary("eudi.wallet.core").get())
-            }
+                add("api", project(":wallet-core"))            }
         }
     }
 }

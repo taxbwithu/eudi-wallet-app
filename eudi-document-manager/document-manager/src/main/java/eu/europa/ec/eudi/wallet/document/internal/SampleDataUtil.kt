@@ -20,8 +20,8 @@ import COSE.HeaderKeys.Algorithm
 import COSE.OneKey
 import COSE.Sign1Message
 import com.upokecenter.cbor.CBORObject
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 import org.multipaz.crypto.EcPublicKey

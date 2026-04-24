@@ -74,8 +74,29 @@ identity = "202411.1"
 dokka = "1.9.20"
 licenseReport = "2.5"
 dependencyCheck = "9.0.9"
+multipaz = "0.90"
+multipazAndroid = "0.95.0"
+jacoco = "0.8.12"
+java = "17"
+json = "20240303"
+mockk = "1.13.5"
+kotlinxIo = "0.4.0"
+eudiSdJwtVcKt = "0.10.0"
+mavenPublish = "0.32.0"
+eudiIso18013DataTransfer = "0.12.0"
+eudiLibJvmOpenid4vciKt = "0.9.1"
+nimbusSdk = "11.20.1"
+eudi-lib-jvm-openid4vp-kt = "0.12.2"
+eudiLibJvmSdjwtKt = "0.18.0"
+eudiLibKmpStatium = "0.2.1"
+coseJava = "1.1.0"
+nstantCbor = "0.9"
+androidx-credentials-registry-provider = "1.0.0-alpha03"
+gmsIdentityCredentials = "16.0.0-alpha01"
+
 
 [libraries]
+androidx-credentials-registry-provider = { module = "androidx.credentials.registry:registry-provider", version.ref = "androidx-credentials-registry-provider" }
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
 accompanist-testharness = { group = "com.google.accompanist", name = "accompanist-testharness", version.ref = "accompanist" }
 android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
@@ -163,6 +184,20 @@ androidx-room = { group = "androidx.room", name = "room-runtime", version.ref = 
 androidx-room-ksp = { group = "androidx.room", name = "room-compiler", version.ref = "androidxRoom" }
 compose-cloudy = { module = "com.github.skydoves:cloudy", version.ref = "cloudy" }
 
+# Needed because the module uses libs.ktor.client.core / libs.ktor.client.serialization
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktor" }
+
+# Needed because the module uses libs.bouncy.castle.prov / libs.bouncy.castle.pkix
+bouncy-castle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncy-castle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+
+# Needed for tests
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+json = { module = "org.json:json", version.ref = "json" }
+
+# (optional cleanup alias for explicit nimbus dependency if you want)
+# nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.0.2" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -177,6 +212,46 @@ owasp-dependencycheck-gradlePlugin = { group = "org.owasp", name = "dependency-c
 kotlinx-kover-gradlePlugin = { group = "org.jetbrains.kotlinx", name = "kover-gradle-plugin", version.ref = "kover" }
 baselineprofile-gradlePlugin = { group = "androidx.benchmark", name = "benchmark-baseline-profile-gradle-plugin", version.ref = "baselineprofile" }
 androidx-room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "androidxRoom" }
+multipaz = { module = "org.multipaz:multipaz", version.ref = "multipaz" }
+kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinxIo" }
+kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinxIo" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
+cose = { module = "com.augustcellars.cose:cose-java", version = "1.1.0" }
+eudi-sd-jwt-vc-kt = { module = "eu.europa.ec.eudi:eudi-lib-jvm-sdjwt-kt", version.ref = "eudiSdJwtVcKt" }
+eudi-iso18013-data-transfer = { module = "eu.europa.ec.eudi:eudi-lib-android-iso18013-data-transfer", version.ref = "eudiIso18013DataTransfer" }
+eudi-lib-jvm-openid4vci-kt = { module = "eu.europa.ec.eudi:eudi-lib-jvm-openid4vci-kt", version.ref = "eudiLibJvmOpenid4vciKt" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat" }
+
+multipaz-android = { module = "org.multipaz:multipaz-android", version.ref = "multipazAndroid" }
+multipaz-longfellow = { module = "org.multipaz:multipaz-longfellow-android", version.ref = "multipazAndroid" }
+
+eudi-lib-jvm-siop-openid4vp-kt = { module = "eu.europa.ec.eudi:eudi-lib-jvm-openid4vp-kt", version.ref = "eudi-lib-jvm-openid4vp-kt" }
+eudi-lib-jvm-sdjwt-kt = { module = "eu.europa.ec.eudi:eudi-lib-jvm-sdjwt-kt", version.ref = "eudiLibJvmSdjwtKt" }
+eudi-lib-kmp-statium = { module = "eu.europa.ec.eudi:eudi-lib-kmp-statium-android", version.ref = "eudiLibKmpStatium" }
+
+upokecenter-cbor = { module = "com.upokecenter:cbor", version.ref = "cbor" }
+cose-java = { module = "com.augustcellars.cose:cose-java", version.ref = "coseJava" }
+
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+
+kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+biometric-ktx = { module = "androidx.biometric:biometric-ktx", version.ref = "androidxBiometric" }
+
+android-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExt" }
+mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockito" }
+
+test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
+test-coreKtx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
+test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+test-rules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
+
+espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidxEspresso" }
+espresso-contrib = { module = "androidx.test.espresso:espresso-contrib", version.ref = "androidxEspresso" }
+espresso-intents = { module = "androidx.test.espresso:espresso-intents", version.ref = "androidxEspresso" }
+nstant-cbor = { module = "co.nstant.in:cbor", version.ref = "nstantCbor" }
+play-services-identity-credentials = { group = "com.google.android.gms", name = "play-services-identity-credentials", version.ref = "gmsIdentityCredentials" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
@@ -186,6 +261,7 @@ dependencyGraph = { id = "dev.iurysouza.modulegraph", version.ref = "dependencyG
 gms = { id = "com.google.gms.google-services", version.ref = "gmsPlugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 secrets = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secrets" }
@@ -199,4 +275,4 @@ koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koinPlug
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dependency-license-report = { id = "com.github.jk1.dependency-license-report", version.ref = "licenseReport" }
-dependencycheck = { id = "org.owasp.dependencycheck", version.ref = "dependencyCheck" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }

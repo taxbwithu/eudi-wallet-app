@@ -33,10 +33,11 @@
             <option value="$PROJECT_DIR$/common-feature" />
             <option value="$PROJECT_DIR$/core-logic" />
             <option value="$PROJECT_DIR$/dashboard-feature" />
-            <option value="$PROJECT_DIR$/eudi-document-manager" />
-            <option value="$PROJECT_DIR$/eudi-lib-android-wallet-core" />
+            <option value="$PROJECT_DIR$/eudi-document-manager/document-manager" />
+            <option value="$PROJECT_DIR$/eudi-lib-android-wallet-core/wallet-core" />
             <option value="$PROJECT_DIR$/issuance-feature" />
             <option value="$PROJECT_DIR$/network-logic" />
+            <option value="$PROJECT_DIR$/nimbus-jose-jwt" />
             <option value="$PROJECT_DIR$/presentation-feature" />
             <option value="$PROJECT_DIR$/proximity-feature" />
             <option value="$PROJECT_DIR$/resources-logic" />

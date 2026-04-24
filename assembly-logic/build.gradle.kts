@@ -23,6 +23,7 @@ import project.convention.logic.config.LibraryModule.CommonFeature
 import project.convention.logic.config.LibraryModule.CoreLogic
 import project.convention.logic.config.LibraryModule.DocumentManager
 import project.convention.logic.config.LibraryModule.WalletCore
+import project.convention.logic.config.LibraryModule.NimbusJoseJwt
 import project.convention.logic.config.LibraryModule.DashboardFeature
 import project.convention.logic.config.LibraryModule.IssuanceFeature
 import project.convention.logic.config.LibraryModule.NetworkLogic

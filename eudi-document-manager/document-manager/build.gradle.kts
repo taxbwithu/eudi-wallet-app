@@ -25,27 +25,23 @@ import java.util.Locale
 plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    //alias(libs.plugins.kotlin.android)
     alias(libs.plugins.dokka)
     alias(libs.plugins.dependency.license.report)
-    alias(libs.plugins.dependencycheck)
-    alias(libs.plugins.sonarqube)
-    alias(libs.plugins.maven.publish)
+    alias(libs.plugins.owasp.dependencycheck)
+    //alias(libs.plugins.sonarqube)
+    id("com.vanniktech.maven.publish") version "0.32.0"
     jacoco
 }
 
-jacoco {
-    toolVersion = libs.versions.jacoco.get()
-}
+//jacoco {
+//    toolVersion = libs.versions.jacoco.get().toString()
+//}
 
-val NAMESPACE: String by project
-val GROUP: String by project
-val POM_SCM_URL: String by project
-val POM_DESCRIPTION: String by project
 
 android {
-    namespace = NAMESPACE
-    group = GROUP
+    namespace = "eu.europa.ec.eudi.wallet.document"
+    group = "eu.europa.ec.eudi"
     compileSdk = 34
 
     defaultConfig {
@@ -74,12 +70,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
-        targetCompatibility = JavaVersion.toVersion(libs.versions.java.get())
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = libs.versions.java.get()
-    }
+//    kotlinOptions {
+//        jvmTarget = libs.versions.java.get().toString()
+//    }
 
     packaging {
         resources {
@@ -94,9 +90,9 @@ android {
         }
     }
 
-    afterEvaluate {
-        libraryVariants.forEach { createJacocoTasks(it) }
-    }
+//    afterEvaluate {
+//        libraryVariants.forEach { createJacocoTasks(it) }
+//    }
 }
 
 dependencies {
@@ -110,10 +106,10 @@ dependencies {
     implementation(libs.kotlinx.io.core)
     implementation(libs.kotlinx.io.bytestring)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines)
 
     // CBOR
-    implementation(libs.cbor)
+    implementation(libs.androidx.cbor)
     implementation(libs.cose)
 
     // sd-jwt-vc
@@ -123,7 +119,8 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.serialization)
     implementation(libs.ktor.serialization.kotlinx.json)
-    add("api", "com.nimbusds:nimbus-jose-jwt")
+    api(project(":nimbus-jose-jwt"))
+    //add("api", "com.nimbusds:nimbus-jose-jwt")
 
     implementation(libs.bouncy.castle.prov)
     implementation(libs.bouncy.castle.pkix)
@@ -179,7 +176,7 @@ licenseReport {
     configurations = arrayOf("releaseRuntimeClasspath")
     excludeBoms = true
     excludeOwnGroup = true
-    renderers = arrayOf(InventoryMarkdownReportRenderer("licenses.md", POM_DESCRIPTION))
+    renderers = arrayOf(InventoryMarkdownReportRenderer("licenses.md", "EUDI wallet library for managing documents"))
 }
 
 tasks.generateLicenseReport.configure {
@@ -214,7 +211,7 @@ mavenPublishing {
     pom {
         ciManagement {
             system = "github"
-            url = "${POM_SCM_URL}/actions"
+            url = "https://github.com/eu-digital-identity-wallet/eudi-lib-android-wallet-document-manager/actions"
         }
     }
 }

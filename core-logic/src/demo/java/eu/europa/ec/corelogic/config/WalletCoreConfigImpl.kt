@@ -73,7 +73,7 @@ internal class WalletCoreConfigImpl(
                     }
 
                     configureDCAPI {
-                        withEnabled(true)
+                        withEnabled(false)
                     }
 
                     configureReaderTrustStore(

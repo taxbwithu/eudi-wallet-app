@@ -45,6 +45,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", project(LibraryModule.CoreLogic.path))
                 add("implementation", project(LibraryModule.DocumentManager.path))
                 add("implementation", project(LibraryModule.WalletCore.path))
+                add("implementation", project(LibraryModule.NimbusJoseJwt.path))
                 add("testImplementation", project(LibraryModule.TestFeatureLogic.path))
                 add("androidTestImplementation", project(LibraryModule.TestFeatureLogic.path))
             }

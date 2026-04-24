@@ -35,8 +35,9 @@ enum class LibraryModule(val path: String) {
     DashboardFeature(":dashboard-feature"),
     PresentationFeature(":presentation-feature"),
     ProximityFeature(":proximity-feature"),
-    DocumentManager(":eudi-document-manager"),
-    WalletCore(":eudi-lib-android-wallet-core"),
+    DocumentManager(":document-manager"),
+    WalletCore(":wallet-core"),
+    NimbusJoseJwt(":nimbus-jose-jwt"),
     IssuanceFeature(":issuance-feature");
 
     val isLogicModule: Boolean

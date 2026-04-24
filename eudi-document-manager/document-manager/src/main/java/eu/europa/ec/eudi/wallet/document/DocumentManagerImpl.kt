@@ -30,7 +30,7 @@ import eu.europa.ec.eudi.wallet.document.internal.toDocument
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.jetbrains.annotations.VisibleForTesting
 import org.multipaz.credential.CredentialLoader
 import org.multipaz.credential.SecureAreaBoundCredential

@@ -34,6 +34,21 @@ plugins {
     alias(libs.plugins.dependencyGraph)
 }
 
+subprojects {
+    configurations.configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("com.nimbusds:nimbus-jose-jwt"))
+                .using(project(":nimbus-jose-jwt"))
+
+            substitute(module("eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager"))
+                .using(project(":document-manager"))
+
+            substitute(module("eu.europa.ec.eudi:eudi-lib-android-wallet-core"))
+                .using(project(":wallet-core"))
+        }
+    }
+}
+
 moduleGraphConfig {
     readmePath.set("wiki/dependency-graph.md")
 }
