@@ -419,7 +419,7 @@ sealed interface Format {
     ) : Format {
         companion object {
             val Dilithium3 = PqcJwtVc(listOf(PqcAlgorithm.Dilithium3), listOf(PqcAlgorithm.Dilithium3))
-            val ML_DSA_44 = PqcJwtVc(listOf(PqcAlgorithm.ML_DSA_44), listOf(PqcAlgorithm.Dilithium3))
+            val ML_DSA_44 = PqcJwtVc(listOf(PqcAlgorithm.ML_DSA_44), listOf(PqcAlgorithm.ML_DSA_44))
         }
     }
 

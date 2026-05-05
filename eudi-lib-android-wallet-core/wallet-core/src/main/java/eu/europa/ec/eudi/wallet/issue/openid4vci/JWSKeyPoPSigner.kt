@@ -67,7 +67,7 @@ internal class JWSKeyPoPSigner(
             val publicKeyBytes = key.dilithiumPublicKey
             val pem = dilithiumPublicKeyToPem(publicKeyBytes)
             print("test");
-            DilithiumJWK(publicKeyBytes)
+            MLDSAJWK(publicKeyBytes)
         }
         else {
             JWK.parseFromPEMEncodedObjects(key.publicKey.toPem())
@@ -86,7 +86,7 @@ internal class JWSKeyPoPSigner(
 
     private val jwsAlgorithm by lazy {
         if (keyInfo is CustomKeyInfo) {
-            JWSAlgorithm.Dilithium3
+            JWSAlgorithm.ML_DSA_44
         } else {
             JWSAlgorithm.parse(keyInfo.algorithm.joseAlgorithmIdentifier)
         }

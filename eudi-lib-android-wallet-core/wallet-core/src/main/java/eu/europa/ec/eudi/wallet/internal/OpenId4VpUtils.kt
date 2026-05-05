@@ -324,7 +324,7 @@ internal suspend fun SdJwt<JwtAndClaims>.serializeWithKeyBinding(
     issueDate: Date,
 ): String {
     var algorithm = JWSAlgorithm.parse((signatureAlgorithm).joseAlgorithmIdentifier)
-    val publicKey = credential.secureArea.getKeyInfo(credential.alias).publicKey
+    val publicKey = credential.secureArea.getKeyInfo(credential.alias)
     val provider = keyUnlockData.asProvider()
     var pemPublicKey: JWK;
     if (publicKey is CustomKeyInfo) {
@@ -332,9 +332,9 @@ internal suspend fun SdJwt<JwtAndClaims>.serializeWithKeyBinding(
         val publicKeyBytes = publicKey.dilithiumPublicKey
         val pem = dilithiumPublicKeyToPem(publicKeyBytes)
         print("test");
-        pemPublicKey = DilithiumJWK(publicKeyBytes).toOfficialJWK()
+        pemPublicKey = MLDSAJWK(publicKeyBytes).toOfficialJWK()
     } else {
-        pemPublicKey = JWK.parseFromPEMEncodedObjects(publicKey.toPem())
+        pemPublicKey = JWK.parseFromPEMEncodedObjects(publicKey.publicKey.toPem())
     }
     val buildKbJwt = NimbusSdJwtOps.kbJwtIssuer(
         signer = object : JWSSigner {

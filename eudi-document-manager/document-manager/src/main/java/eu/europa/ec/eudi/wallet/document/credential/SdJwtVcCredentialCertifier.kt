@@ -22,6 +22,7 @@ import com.nimbusds.jose.util.Base64
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.SdJwtVcVerifier
 import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
+import eu.europa.ec.eudi.wallet.issue.openid4vci.MLDSAJWK
 import io.ktor.client.HttpClient
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -61,14 +62,14 @@ class SdJwtVcCredentialCertifier : CredentialCertification {
                     )?.jsonPrimitive?.content
                 val decoder = Base64.from(publicKeyBase64)
                 val publicKey = decoder.decode()
-                jwk = DilithiumJWK(publicKey)
+                jwk = MLDSAJWK(publicKey)
             } else {
                 jwk =
                     JWK.parse(Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"].toString())
             }
             var sdjwtVcPk: Key?
-            if (jwk is DilithiumJWK) {
-                sdjwtVcPk = DilithiumPublicKey(encodedKey = jwk.publicKey)
+            if (jwk is MLDSAJWK) {
+                sdjwtVcPk = MldsaPublicKey(encodedKey = jwk.publicKey)
                 if (!(credential.secureArea.getKeyInfo(credential.alias) as CustomKeyInfo).dilithiumPublicKey.contentEquals(
                         sdjwtVcPk.encoded
                     )

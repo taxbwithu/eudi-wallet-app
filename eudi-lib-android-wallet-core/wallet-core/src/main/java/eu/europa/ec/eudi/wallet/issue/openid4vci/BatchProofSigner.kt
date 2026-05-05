@@ -52,7 +52,7 @@ class BatchProofSigner(
                 val publicKeyBytes = key.dilithiumPublicKey
                 val pem = dilithiumPublicKeyToPem(publicKeyBytes)
                 print("test");
-                jwk = DilithiumJWK(publicKeyBytes)
+                jwk = MLDSAJWK(publicKeyBytes)
             }
             else {
                 jwk = JWK.parse(signer.getKeyInfo().publicKey.toJwk().toString())
