@@ -432,6 +432,6 @@
     }
   ],
   "documentConfigurationIdentifier": "eu.europa.ec.eudi.pid_mdoc",
-  "credentialIssuerIdentifier": "https://eudiw-issuer.duckdns.org:5000",
+  "credentialIssuerIdentifier": "https://eudi-issuer-frontend.duckdns.org",
   "issuerDisplay": null
 }

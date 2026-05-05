@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2024-2025 European Commission
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,6 @@ package eu.europa.ec.eudi.wallet.document
 import eu.europa.ec.eudi.wallet.document.credential.CredentialCertification
 import eu.europa.ec.eudi.wallet.document.credential.CredentialFactory
 import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
-import eu.europa.ec.eudi.wallet.document.credential.SdJwtVcCredential
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
@@ -30,15 +29,14 @@ import eu.europa.ec.eudi.wallet.document.internal.toDocument
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.runBlocking
-import kotlin.time.Clock
+import kotlinx.io.bytestring.ByteString
 import org.jetbrains.annotations.VisibleForTesting
-import org.multipaz.credential.CredentialLoader
 import org.multipaz.credential.SecureAreaBoundCredential
-import org.multipaz.document.DocumentStore
-import org.multipaz.mdoc.credential.MdocCredential
+import org.multipaz.document.buildDocumentStore
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.storage.Storage
 import org.multipaz.util.Logger
+import kotlin.time.Clock
 
 /**
  * Default implementation of the [DocumentManager] interface for the EUDI Wallet.
@@ -74,23 +72,6 @@ class DocumentManagerImpl(
 ) : DocumentManager {
 
     /**
-     * Flag to control device public key verification during credential certification.
-     * When true (default), ensures that the public key from the issuer matches the device key.
-     * May be disabled for testing purposes only.
-     */
-    @VisibleForTesting
-    @get:JvmSynthetic
-    internal var checkDevicePublicKey: Boolean = true
-
-    /**
-     * Storage prefix used to isolate documents managed by this instance.
-     * Constructed from the identifier to ensure uniqueness.
-     */
-    @VisibleForTesting
-    @get:JvmSynthetic
-    internal val prefix = "Document_${identifier}_"
-
-    /**
      * Document storage and retrieval system, lazily initialized with configured
      * credential implementations and metadata factory.
      *
@@ -99,19 +80,12 @@ class DocumentManagerImpl(
     @get:VisibleForTesting
     @get:JvmSynthetic
     internal val documentStore by lazy {
-        DocumentStore(
+        buildDocumentStore(
             storage = storage,
             secureAreaRepository = secureAreaRepository,
-            credentialLoader = CredentialLoader().apply {
-                addCredentialImplementation(MdocCredential::class) { document ->
-                    MdocCredential(document)
-                }
-                addCredentialImplementation(SdJwtVcCredential::class) { document ->
-                    SdJwtVcCredential(document)
-                }
-            },
-            documentMetadataFactory = ApplicationMetadata::create
-        )
+        ) {
+            setDocumentMetadataFactory(ApplicationMetadata::create)
+        }
     }
 
     /**
@@ -201,31 +175,33 @@ class DocumentManagerImpl(
                 val domain = identifier
                 val identityDocument = documentStore.createDocument { metadata ->
                     (metadata as ApplicationMetadata).initialize(
+                        documentManagerId = identifier,
                         format = format,
-                        documentName = documentId.toString(),
-                        documentManagerId = domain,
+                        documentName = when (format) {
+                            is MsoMdocFormat -> format.docType
+                            is SdJwtVcFormat -> format.vct
+                        },
                         createdAt = Clock.System.now(),
                         issuerMetadata = issuerMetadata,
                         initialCredentialsCount = createSettings.numberOfCredentials,
-                        credentialPolicy = createSettings.credentialPolicy
+                        credentialPolicy = createSettings.credentialPolicy,
+                        keyAttestation = null,
                     )
                 }
 
                 val factory = CredentialFactory(domain = domain, format = format)
-                factory.createCredentials(
+                val (_, keyAttestation) = factory.createCredentials(
                     format = format,
                     document = identityDocument,
                     createDocumentSettings = createSettings,
                     secureArea = secureArea
                 )
+                keyAttestation?.let {
+                    identityDocument.applicationMetadata.setKeyAttestation(it)
+                }
 
                 documentId = identityDocument.identifier
-                identityDocument.applicationMetadata.setDocumentName(
-                    when (format) {
-                        is MsoMdocFormat -> format.docType
-                        is SdJwtVcFormat -> format.vct
-                    }
-                )
+
                 Outcome.success(identityDocument.toDocument())
             } catch (e: Throwable) {
                 documentId?.let { documentStore.deleteDocument(it) }
@@ -266,16 +242,12 @@ class DocumentManagerImpl(
                     credentialCertifier.certifyCredential(
                         credential = credential,
                         issuedCredential = issuerProvidedData.first { it.publicKeyAlias == credential.alias },
-                        forceKeyCheck = checkDevicePublicKey
                     )
                 }
-                with(identityDocument) {
-                    // copy data from first credential
-                    identityDocument.applicationMetadata.setIssuerProvidedData(issuerProvidedData.first().data)
-                    identityDocument.applicationMetadata.setDocumentName(unsignedDocument.name)
-                    identityDocument.applicationMetadata.setIssuedAt(Clock.System.now())
-                    identityDocument.applicationMetadata.clearDeferredRelatedData()
-                }
+                identityDocument.applicationMetadata.issue(
+                    issuerProvidedData = ByteString(issuerProvidedData.first().data),
+                    documentName = unsignedDocument.name,
+                )
                 Outcome.success(identityDocument.toDocument())
             } catch (e: Throwable) {
                 Outcome.failure(e)
@@ -300,10 +272,10 @@ class DocumentManagerImpl(
                 val identityDocument = documentStore.lookupDocument(unsignedDocument.id)
                     ?: throw IllegalArgumentException("Document with ${unsignedDocument.id} not found")
 
-                with(identityDocument) {
-                    applicationMetadata.setDocumentName(unsignedDocument.name)
-                    applicationMetadata.setDeferredRelatedData(relatedData)
-                }
+                identityDocument.applicationMetadata.issueDeferred(
+                    deferredRelatedData = ByteString(relatedData),
+                    documentName = unsignedDocument.name
+                )
                 Outcome.success(identityDocument.toDocument())
             } catch (e: Exception) {
                 Outcome.failure(e)

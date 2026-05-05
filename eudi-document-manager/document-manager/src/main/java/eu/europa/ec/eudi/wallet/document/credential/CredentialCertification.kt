@@ -21,11 +21,10 @@ import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import org.multipaz.credential.SecureAreaBoundCredential
 
-interface CredentialCertification {
+fun interface CredentialCertification {
     suspend fun certifyCredential(
         credential: SecureAreaBoundCredential,
         issuedCredential: IssuerProvidedCredential,
-        forceKeyCheck: Boolean
     )
 
     companion object {
@@ -37,5 +36,3 @@ interface CredentialCertification {
         }
     }
 }
-
-

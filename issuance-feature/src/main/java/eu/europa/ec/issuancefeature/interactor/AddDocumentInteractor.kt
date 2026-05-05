@@ -162,7 +162,7 @@ class AddDocumentInteractorImpl(
                                     }
 
                                 val mappedOthers: List<AddDocumentUi> =
-                                    otherDocs.map { doc ->
+                                    otherDocs.distinctBy { it.configurationId }.map { doc ->
                                         AddDocumentUi(
                                             credentialIssuerId = issuer,
                                             configurationIds = listOf(doc.configurationId),

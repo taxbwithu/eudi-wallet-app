@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2024-2025 European Commission
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,10 +18,6 @@ package eu.europa.ec.eudi.wallet.document
 
 import eu.europa.ec.eudi.wallet.document.format.DocumentData
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
-import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
-import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
 import eu.europa.ec.eudi.wallet.document.internal.CredentialPolicyApplier
 import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
@@ -30,21 +26,22 @@ import eu.europa.ec.eudi.wallet.document.internal.documentName
 import eu.europa.ec.eudi.wallet.document.internal.format
 import eu.europa.ec.eudi.wallet.document.internal.issuedAt
 import eu.europa.ec.eudi.wallet.document.internal.issuerMetaData
-import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
+import eu.europa.ec.eudi.wallet.document.internal.asProvider
 import eu.europa.ec.eudi.wallet.document.internal.toCoseBytes
 import eu.europa.ec.eudi.wallet.document.internal.toEcPublicKey
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import kotlinx.coroutines.runBlocking
-import kotlin.time.Clock
-import kotlin.time.toJavaInstant
-import kotlin.time.toKotlinInstant
+import kotlinx.coroutines.withContext
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.crypto.EcSignature
-import org.multipaz.document.NameSpacedData
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.UnlockReason
 import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.toJavaInstant
+import kotlin.time.toKotlinInstant
 
 /**
  * Represents an Issued Document in the EUDI Wallet.
@@ -92,19 +89,11 @@ class IssuedDocument(
             val issuerProvidedData = baseDocument.applicationMetadata.issuerProvidedData
             requireNotNull(issuerProvidedData) { "Issuer provided data not found" }
 
-            return when (val currentFormat = format) {
-                is MsoMdocFormat -> MsoMdocData(
-                    format = currentFormat,
-                    nameSpacedData = NameSpacedData.fromIssuerProvidedData(issuerProvidedData),
-                    issuerMetadata = issuerMetadata
-                )
-
-                is SdJwtVcFormat -> SdJwtVcData(
-                    format = currentFormat,
-                    sdJwtVc = issuerProvidedData.sdJwtVcString,
-                    issuerMetadata = issuerMetadata
-                )
-            }
+            return DocumentData.make(
+                format = format,
+                issuerProvidedData = issuerProvidedData,
+                issuerMetadata = issuerMetadata
+            )
         }
 
     /**
@@ -119,17 +108,25 @@ class IssuedDocument(
     val credentialPolicy: CreateDocumentSettings.CredentialPolicy
         get() = baseDocument.applicationMetadata.credentialPolicy
 
+    companion object {
+        const val NO_CREDENTIALS = "Credential not found"
+    }
+
     /**
-     * Retrieves all valid credentials associated with this document.
+     * Retrieves all credentials associated with this document that pass structural validity checks.
      *
      * This method filters the document's credentials based on several criteria:
      * - Only certified credentials bound to a secure area
      * - Only credentials that are not invalidated
      * - Only credentials that belong to the current document manager
      * - For OneTimeUse policy, only credentials that haven't been used (usageCount == 0)
-     * - For RotateUse policy, all valid credentials
+     * - For RotateUse policy, all credentials regardless of usage count
      *
-     * @return A list of valid [SecureAreaBoundCredential] objects
+     * **Note:** This method does **not** filter by temporal validity (`validFrom`/`validUntil`).
+     * The returned list may include credentials that are expired or not yet valid.
+     * Use [findCredential] to obtain a credential that is valid at a specific point in time.
+     *
+     * @return A list of [SecureAreaBoundCredential] objects that pass structural validity checks
      */
     suspend fun getCredentials(): List<SecureAreaBoundCredential> {
         return baseDocument.getCertifiedCredentials()
@@ -176,6 +173,14 @@ class IssuedDocument(
         return candidate
     }
 
+    /**
+     * Returns the number of credentials that pass structural validity checks.
+     *
+     * Delegates to [getCredentials], which does **not** filter by temporal validity.
+     * This count may include expired or not-yet-valid credentials.
+     * To check how many credentials are currently usable, filter [getCredentials] by
+     * `validFrom`/`validUntil` or use [findCredential] to check if at least one is valid.
+     */
     override suspend fun credentialsCount(): Int {
         return getCredentials().size
     }
@@ -245,7 +250,7 @@ class IssuedDocument(
      */
     suspend fun <T> consumingCredential(credentialContext: suspend SecureAreaBoundCredential.() -> T): Result<T> {
         return runCatching {
-            val credential = findCredential() ?: throw IllegalStateException("Credential not found")
+            val credential = findCredential() ?: throw IllegalStateException(NO_CREDENTIALS)
             val result = credentialContext.invoke(credential)
 
             // Use the internal policy applier to apply the policy
@@ -270,12 +275,15 @@ class IssuedDocument(
         dataToSign: ByteArray,
         keyUnlockData: KeyUnlockData? = null
     ): Result<EcSignature> {
-        return consumingCredential {
-            secureArea.sign(
-                alias = alias,
-                dataToSign = dataToSign,
-                keyUnlockData = keyUnlockData
-            )
+        val provider = keyUnlockData.asProvider()
+        return withContext(provider) {
+            consumingCredential {
+                secureArea.sign(
+                    alias = alias,
+                    dataToSign = dataToSign,
+                    unlockReason = UnlockReason.Unspecified
+                )
+            }
         }
     }
 
@@ -296,12 +304,15 @@ class IssuedDocument(
         otherPublicKey: ByteArray,
         keyUnlockData: KeyUnlockData? = null
     ): Result<SharedSecret> {
-        return consumingCredential {
-            secureArea.keyAgreement(
-                alias = alias,
-                otherKey = otherPublicKey.toEcPublicKey,
-                keyUnlockData = keyUnlockData
-            )
+        val provider = keyUnlockData.asProvider()
+        return withContext(provider) {
+            consumingCredential {
+                secureArea.keyAgreement(
+                    alias = alias,
+                    otherKey = otherPublicKey.toEcPublicKey,
+                    unlockReason = UnlockReason.Unspecified
+                )
+            }
         }
     }
 
@@ -314,19 +325,19 @@ class IssuedDocument(
     @Deprecated("Use findCredential()?.secureArea instead")
     override val secureArea: SecureArea
         get() = runBlocking {
-            findCredential()?.secureArea ?: throw IllegalStateException("Credential not found")
+            findCredential()?.secureArea ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.alias instead")
     override val keyAlias: String
         get() = runBlocking {
-            findCredential()?.alias ?: throw IllegalStateException("Credential not found")
+            findCredential()?.alias ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.isKeyInvalidated instead")
     override val isKeyInvalidated: Boolean
         get() = runBlocking {
-            findCredential()?.isInvalidated() ?: throw IllegalStateException("Credential not found")
+            findCredential()?.isInvalidated() ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.secureArea instead to get KeyInfo")
@@ -334,7 +345,7 @@ class IssuedDocument(
         get() = runBlocking {
             findCredential()?.let { credential ->
                 credential.secureArea.getKeyInfo(credential.alias)
-            } ?: throw IllegalStateException("Credential not found")
+            } ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use findCredential()?.secureArea instead to get KeyInfo")
@@ -345,14 +356,14 @@ class IssuedDocument(
     val issuerProvidedData: ByteArray
         get() = runBlocking {
             findCredential()?.issuerProvidedData
-                ?: throw IllegalStateException("Credential not found")
+                ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     @Deprecated("Use getValidFrom() instead")
     val validFrom: Instant
         get() = runBlocking {
             findCredential()?.validFrom?.toJavaInstant()
-                ?: throw IllegalStateException("Credential not found")
+                ?: throw IllegalStateException(NO_CREDENTIALS)
 
         }
 
@@ -360,7 +371,7 @@ class IssuedDocument(
     val validUntil: Instant
         get() = runBlocking {
             findCredential()?.validUntil?.toJavaInstant()
-                ?: throw IllegalStateException("Credential not found")
+                ?: throw IllegalStateException(NO_CREDENTIALS)
         }
 
     /**

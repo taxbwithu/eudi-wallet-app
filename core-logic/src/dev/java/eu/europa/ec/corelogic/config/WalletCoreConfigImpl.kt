@@ -34,7 +34,7 @@ internal class WalletCoreConfigImpl(
 ) : WalletCoreConfig {
 
     private companion object {
-        const val VCI_ISSUER_URL = "https://eudiw-issuer.duckdns.org:5000"
+        const val VCI_ISSUER_URL = "https://eudi-issuer-frontend.duckdns.org"
         const val VCI_CLIENT_ID = "wallet-dev"
         const val AUTHENTICATION_REQUIRED = false
     }
@@ -96,7 +96,7 @@ internal class WalletCoreConfigImpl(
             VciConfig(
                 config = OpenId4VciManager.Config.Builder()
                     .withIssuerUrl(issuerUrl = VCI_ISSUER_URL)
-                    .withClientAuthenticationType(OpenId4VciManager.ClientAuthenticationType.AttestationBased)
+                    .withClientAuthenticationType(OpenId4VciManager.ClientAuthenticationType.None(clientId = VCI_CLIENT_ID))
                     .withAuthFlowRedirectionURI(BuildConfig.ISSUE_AUTHORIZATION_DEEPLINK)
                     .withParUsage(OpenId4VciManager.Config.ParUsage.IF_SUPPORTED)
                     .withDPopConfig(DPopConfig.Default)
@@ -106,7 +106,7 @@ internal class WalletCoreConfigImpl(
             VciConfig(
                 config = OpenId4VciManager.Config.Builder()
                     .withIssuerUrl(issuerUrl = VCI_ISSUER_URL)
-                    .withClientAuthenticationType(OpenId4VciManager.ClientAuthenticationType.AttestationBased)
+                    .withClientAuthenticationType(OpenId4VciManager.ClientAuthenticationType.None(clientId = VCI_CLIENT_ID))
                     .withAuthFlowRedirectionURI(BuildConfig.ISSUE_AUTHORIZATION_DEEPLINK)
                     .withParUsage(OpenId4VciManager.Config.ParUsage.IF_SUPPORTED)
                     .withDPopConfig(DPopConfig.Default)

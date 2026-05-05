@@ -20,7 +20,7 @@ import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.KeyConverter
 import com.nimbusds.jose.util.Base64
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
-import eu.europa.ec.eudi.sdjwt.vc.KtorHttpClientFactory
+import eu.europa.ec.eudi.sdjwt.SdJwtVcVerifier
 import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import io.ktor.client.HttpClient
 import kotlin.time.Clock
@@ -36,25 +36,12 @@ import org.multipaz.util.Logger
 import java.security.Key
 import kotlin.time.Duration.Companion.days
 
-class SdJwtVcCredentialCertifier(
-    var ktorHttpClientFactory: KtorHttpClientFactory = { HttpClient() }
-) : CredentialCertification {
+class SdJwtVcCredentialCertifier : CredentialCertification {
     override suspend fun certifyCredential(
         credential: SecureAreaBoundCredential,
         issuedCredential: IssuerProvidedCredential,
-        forceKeyCheck: Boolean
     ) {
         val data = issuedCredential.data
-        DefaultSdJwtOps.SdJwtVcVerifier.usingX5cOrIssuerMetadata(
-            httpClientFactory = ktorHttpClientFactory,
-            x509CertificateTrust = { certificateChain ->
-                // TODO Check the certificate path
-                true
-            }
-        ).verify(data.sdJwtVcString).onFailure {
-            Logger.w("SdJwtVcVerifier", "Invalid SD-JWT VC with error: ${it.message}", it)
-            // throw IllegalArgumentException("Invalid SD-JWT VC with error: ${it.message}", it)
-        }
 
         val sdJwt = DefaultSdJwtOps.unverifiedIssuanceFrom(data.sdJwtVcString).getOrElse {
             throw IllegalArgumentException("Invalid SD-JWT VC", it)
@@ -62,35 +49,41 @@ class SdJwtVcCredentialCertifier(
 
         val (_, claims) = sdJwt.jwt
 
-        claims["cnf"]?.let {
+        val cnf = claims["cnf"]?.let {
             print("test");
             var jwk: JWK?
             if (Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"]?.jsonObject?.get("kty")?.jsonPrimitive?.content
-                    .toString() == "AKP") {
-                val publicKeyBase64 = Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"]?.jsonObject?.get("pub")?.jsonPrimitive?.content
+                    .toString() == "AKP"
+            ) {
+                val publicKeyBase64 =
+                    Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"]?.jsonObject?.get(
+                        "pub"
+                    )?.jsonPrimitive?.content
                 val decoder = Base64.from(publicKeyBase64)
                 val publicKey = decoder.decode()
                 jwk = DilithiumJWK(publicKey)
             } else {
-                jwk = JWK.parse(Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"].toString())
+                jwk =
+                    JWK.parse(Json.Default.decodeFromString<JsonObject>(it.toString())["jwk"].toString())
             }
             var sdjwtVcPk: Key?
             if (jwk is DilithiumJWK) {
                 sdjwtVcPk = DilithiumPublicKey(encodedKey = jwk.publicKey)
                 if (!(credential.secureArea.getKeyInfo(credential.alias) as CustomKeyInfo).dilithiumPublicKey.contentEquals(
                         sdjwtVcPk.encoded
-                    )) {
-                    if (forceKeyCheck) {
-                        throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
-                    }
+                    )
+                ) {
+
+                    throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
+
                 }
             } else {
                 sdjwtVcPk = KeyConverter.toJavaKeys(listOf(jwk)).first()
                     ?: throw IllegalArgumentException("Invalid SD-JWT VC")
                 if (credential.secureArea.getKeyInfo(credential.alias).publicKey.javaPublicKey != sdjwtVcPk) {
-                    if (forceKeyCheck) {
-                        throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
-                    }
+
+                    throw IllegalArgumentException("Public key in SD-JWT VC does not match the one in the request")
+
                 }
             }
 
@@ -99,9 +92,12 @@ class SdJwtVcCredentialCertifier(
         // TODO what to do with validFrom and validUntil if they are not present in the SD-JWT VC
         //  in nbf (or iat if no nbf) and exp claims that are optional
 
-        val nbf = claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
-        val iat = claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
-        val exp = claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
+        val nbf =
+            claims["nbf"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
+        val iat =
+            claims["iat"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
+        val exp =
+            claims["exp"]?.jsonPrimitive?.longOrNull?.let { Instant.Companion.fromEpochSeconds(it) }
         val validFrom = nbf ?: iat ?: Clock.System.now()
         val validUntil = exp ?: validFrom.plus(30.days)
 
