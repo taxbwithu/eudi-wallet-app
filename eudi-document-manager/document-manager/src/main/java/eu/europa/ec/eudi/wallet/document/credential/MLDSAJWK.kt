@@ -14,7 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 
-package eu.europa.ec.eudi.wallet.document.credential
+package eu.europa.ec.eudi.wallet.issue.openid4vci
 
 import com.nimbusds.jose.Algorithm
 import com.nimbusds.jose.Requirement
@@ -24,7 +24,7 @@ import java.net.URI
 import java.security.KeyStore
 import java.util.LinkedHashMap
 
-class DilithiumJWK(
+class MLDSAJWK(
     val publicKey: ByteArray,
     val kid: String? = null,
     val ks: KeyStore? = null
@@ -32,7 +32,7 @@ class DilithiumJWK(
     KeyType("AKP", Requirement.REQUIRED),  // Custom key type
     null,                  // KeyUse
     null,                  // KeyOperations
-    Algorithm("Dilithium3"),                  // Algorithm
+    Algorithm("ML-DSA-44"),                  // Algorithm
     kid,                   // Key ID
     null,                  // x5u
     null,                  // x5t
@@ -43,7 +43,7 @@ class DilithiumJWK(
     override fun getRequiredParams(): LinkedHashMap<String, *> {
         val params = LinkedHashMap<String, Any>()
         params["kty"] = "AKP"
-        params["alg"] = "Dilithium3"
+        params["alg"] = "ML-DSA-44"
         params["pub"] = Base64URL.encode(publicKey)
         if (kid != null) params["kid"] = kid
         return params
@@ -52,9 +52,16 @@ class DilithiumJWK(
     override fun isPrivate(): Boolean = false
 
     override fun toPublicJWK(): JWK = this
+
+    fun toOfficialJWK(): JWK {
+        return MLDSAKey.Builder(
+            Algorithm("ML-DSA-44"), // Or your custom curve name
+            Base64URL.encode(this.publicKey) // `x` = public key bytes
+        ).build()
+    }
     override fun toRevokedJWK(keyRevocation: KeyRevocation?): JWK {
         // Simply returning a new object with the same data
-        return DilithiumJWK(publicKey, kid)
+        return MLDSAJWK(publicKey, kid)
     }
 
     override fun size(): Int {
@@ -64,8 +71,9 @@ class DilithiumJWK(
 
     override fun toJSONObject(): MutableMap<String, Any> {
         val obj = super.toJSONObject()
+        // TODO MM
         obj["kty"] = "AKP"
-        obj["alg"] = "Dilithium3"
+        obj["alg"] = "ML-DSA-44"
         obj["pub"] = Base64URL.encode(publicKey).toString()
         if (kid != null) obj["kid"] = kid
         return obj

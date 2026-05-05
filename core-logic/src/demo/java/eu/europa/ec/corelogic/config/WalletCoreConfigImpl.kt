@@ -68,7 +68,7 @@ internal class WalletCoreConfigImpl(
                             )
                         )
                         withFormats(
-                            Format.MsoMdoc.ES256, Format.SdJwtVc.ES256
+                            Format.PqcJwtVc.ML_DSA_44
                         )
                     }
 

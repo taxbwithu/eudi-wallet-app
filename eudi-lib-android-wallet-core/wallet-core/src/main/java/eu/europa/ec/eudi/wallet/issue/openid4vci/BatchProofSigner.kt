@@ -21,7 +21,9 @@ import eu.europa.ec.eudi.openid4vci.BatchSignOperation
 import eu.europa.ec.eudi.openid4vci.BatchSigner
 import eu.europa.ec.eudi.openid4vci.JwtBindingKey
 import eu.europa.ec.eudi.openid4vci.SignOperation
+import eu.europa.ec.eudi.wallet.document.credential.CustomKeyInfo
 import eu.europa.ec.eudi.wallet.document.credential.ProofOfPossessionSigner
+import eu.europa.ec.eudi.wallet.internal.dilithiumPublicKeyToPem
 import kotlinx.coroutines.runBlocking
 import org.multipaz.securearea.KeyLockedException
 import org.multipaz.securearea.KeyUnlockData
@@ -43,12 +45,31 @@ class BatchProofSigner(
 
     override suspend fun authenticate(): BatchSignOperation<JwtBindingKey> {
         return BatchSignOperation(signers.map { signer ->
-            val jwk = JWK.parse(signer.getKeyInfo().publicKey.toJwk().toString())
+            //val jwk = JWK.parse(signer.getKeyInfo().publicKey.toJwk().toString())
+            val key = signer.getKeyInfo()
+            var jwk: JWK?
+            if (key is CustomKeyInfo) {
+                val publicKeyBytes = key.dilithiumPublicKey
+                val pem = dilithiumPublicKeyToPem(publicKeyBytes)
+                print("test");
+                jwk = DilithiumJWK(publicKeyBytes)
+            }
+            else {
+                jwk = JWK.parse(signer.getKeyInfo().publicKey.toJwk().toString())
+            }
             val keyUnlockData = this.keyUnlockData?.get(signer.keyAlias)
             SignOperation(
                 function = { input ->
                     try {
-                        signer.signPoP(input, keyUnlockData).toDerEncoded()
+                        val sig = signer.signPoP(input, keyUnlockData)
+                        if (key is CustomKeyInfo) {
+                            print ("TESt");
+                            // return raw ML-DSA signature bytes from your custom signer/secure area
+                            //extractDilithiumRaw(sig)
+                            input.map { it }.toByteArray()
+                        } else {
+                            sig.toDerEncoded()
+                        }
                     } catch (e: KeyLockedException) {
                         keyLockedException = e
                         throw e

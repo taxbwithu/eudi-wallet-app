@@ -71,6 +71,7 @@ class DilithiumJWK(
 
     override fun toJSONObject(): MutableMap<String, Any> {
         val obj = super.toJSONObject()
+        // TODO MM
         obj["kty"] = "AKP"
         obj["alg"] = "Dilithium3"
         obj["pub"] = Base64URL.encode(publicKey).toString()

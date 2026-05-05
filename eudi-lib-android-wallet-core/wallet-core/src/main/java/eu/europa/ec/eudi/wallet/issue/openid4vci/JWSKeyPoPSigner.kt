@@ -86,7 +86,7 @@ internal class JWSKeyPoPSigner(
 
     private val jwsAlgorithm by lazy {
         if (keyInfo is CustomKeyInfo) {
-            JWSAlgorithm.ES256
+            JWSAlgorithm.Dilithium3
         } else {
             JWSAlgorithm.parse(keyInfo.algorithm.joseAlgorithmIdentifier)
         }

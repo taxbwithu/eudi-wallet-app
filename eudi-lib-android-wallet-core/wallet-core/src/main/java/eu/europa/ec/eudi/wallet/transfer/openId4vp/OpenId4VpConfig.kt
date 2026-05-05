@@ -585,8 +585,8 @@ enum class PqcAlgorithm(
     val description: String,
 ) {
     Dilithium3(
-        coseAlgorithmIdentifier = -99, joseAlgorithmIdentifier = "ML-DSA-44", fullySpecified = true,
-        description = "ML-DSA-44",
+        coseAlgorithmIdentifier = -99, joseAlgorithmIdentifier = "Dilithium3", fullySpecified = true,
+        description = "Dilithium3",
         curve = null, hashAlgorithm = Algorithm.UNSET, isSigning = true
     ),
     ML_DSA_44(

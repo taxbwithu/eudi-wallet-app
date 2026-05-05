@@ -58,6 +58,7 @@ import eu.europa.ec.eudi.wallet.document.credential.CredentialIssuedData
 import eu.europa.ec.eudi.wallet.document.credential.CustomKeyInfo
 import eu.europa.ec.eudi.wallet.document.credential.getIssuedData
 import eu.europa.ec.eudi.wallet.issue.openid4vci.DilithiumJWK
+import eu.europa.ec.eudi.wallet.issue.openid4vci.MLDSAJWK
 import eu.europa.ec.eudi.wallet.issue.openid4vci.toJoseEncoded
 import eu.europa.ec.eudi.wallet.transfer.openId4vp.ClientIdScheme
 import eu.europa.ec.eudi.wallet.transfer.openId4vp.EncryptionAlgorithm
@@ -327,7 +328,7 @@ internal suspend fun SdJwt<JwtAndClaims>.serializeWithKeyBinding(
     val provider = keyUnlockData.asProvider()
     var pemPublicKey: JWK;
     if (publicKey is CustomKeyInfo) {
-        algorithm = JWSAlgorithm.ML_DSA_44
+        algorithm = JWSAlgorithm.Dilithium3
         val publicKeyBytes = publicKey.dilithiumPublicKey
         val pem = dilithiumPublicKeyToPem(publicKeyBytes)
         print("test");
@@ -356,7 +357,7 @@ internal suspend fun SdJwt<JwtAndClaims>.serializeWithKeyBinding(
             }
         },
         signAlgorithm = algorithm,
-        publicKey = JWK.parseFromPEMEncodedObjects(publicKey.toPem()) as AsymmetricJWK
+        publicKey = pemPublicKey as AsymmetricJWK
     ) {
         audience(clientId.clientId)
         claim("nonce", nonce)
