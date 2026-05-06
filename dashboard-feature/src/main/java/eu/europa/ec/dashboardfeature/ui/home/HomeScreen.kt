@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -24,12 +24,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -76,6 +72,7 @@ import eu.europa.ec.uilogic.component.wrap.WrapModalBottomSheet
 import eu.europa.ec.uilogic.extension.finish
 import eu.europa.ec.uilogic.extension.openAppSettings
 import eu.europa.ec.uilogic.extension.openBleSettings
+import eu.europa.ec.uilogic.extension.paddingFrom
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -99,7 +96,7 @@ fun HomeScreen(
     val isBottomSheetOpen = state.isBottomSheetOpen
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
+        skipPartiallyExpanded = true
     )
 
     ContentScreen(
@@ -141,7 +138,6 @@ fun HomeScreen(
             HomeScreenSheetContent(
                 sheetContent = state.sheetContent,
                 onEventSent = { event -> viewModel.setEvent(event) },
-                modalBottomSheetState = bottomSheetState
             )
         }
     }
@@ -159,8 +155,7 @@ private fun TopBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                horizontal = SPACING_SMALL.dp,
-                vertical = SPACING_MEDIUM.dp
+                all = SPACING_SMALL.dp
             )
     ) {
         // home menu icon
@@ -174,7 +169,7 @@ private fun TopBar(
 
         // wallet logo
         AppIconAndText(
-            modifier = Modifier.size(50.dp).align(Alignment.Center),
+            modifier = Modifier.align(Alignment.Center),
             appIconAndTextData = AppIconAndTextDataUi()
         )
     }
@@ -195,14 +190,7 @@ private fun Content(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(
-                paddingValues = PaddingValues(
-                    top = paddingValues.calculateTopPadding(),
-                    bottom = 0.dp,
-                    start = paddingValues.calculateStartPadding(LayoutDirection.Ltr),
-                    end = paddingValues.calculateEndPadding(LayoutDirection.Ltr)
-                )
-            )
+            .paddingFrom(paddingValues, bottom = false)
             .verticalScroll(scrollState)
             .padding(vertical = SPACING_MEDIUM.dp),
         verticalArrangement = Arrangement.spacedBy(SPACING_MEDIUM.dp)
@@ -301,71 +289,56 @@ private fun handleNavigationEffect(
 private fun HomeScreenSheetContent(
     sheetContent: HomeScreenBottomSheetContent,
     onEventSent: (event: Event) -> Unit,
-    modalBottomSheetState: SheetState
 ) {
     when (sheetContent) {
         is HomeScreenBottomSheetContent.Authenticate -> {
-            WrapModalBottomSheet(
-                onDismissRequest = {
-                    onEventSent(Event.BottomSheet.UpdateBottomSheetState(isOpen = false))
-                },
-                sheetState = modalBottomSheetState
-            ) {
-                BottomSheetWithTwoBigIcons(
-                    textData = BottomSheetTextDataUi(
-                        title = stringResource(R.string.home_screen_authenticate),
-                        message = stringResource(R.string.home_screen_authenticate_description)
+            BottomSheetWithTwoBigIcons(
+                textData = BottomSheetTextDataUi(
+                    title = stringResource(R.string.home_screen_authenticate),
+                    message = stringResource(R.string.home_screen_authenticate_description)
+                ),
+                options = listOf(
+                    ModalOptionUi(
+                        title = stringResource(R.string.home_screen_authenticate_option_in_person),
+                        leadingIcon = AppIcons.PresentDocumentInPerson,
+                        event = Event.BottomSheet.Authenticate.OpenAuthenticateInPerson,
                     ),
-                    options = listOf(
-                        ModalOptionUi(
-                            title = stringResource(R.string.home_screen_authenticate_option_in_person),
-                            leadingIcon = AppIcons.PresentDocumentInPerson,
-                            event = Event.BottomSheet.Authenticate.OpenAuthenticateInPerson,
-                        ),
-                        ModalOptionUi(
-                            title = stringResource(R.string.home_screen_add_document_option_online),
-                            leadingIcon = AppIcons.PresentDocumentOnline,
-                            event = Event.BottomSheet.Authenticate.OpenAuthenticateOnLine,
-                        )
-                    ),
-                    onEventSent = { event ->
-                        onEventSent(event)
-                    }
-                )
-            }
+                    ModalOptionUi(
+                        title = stringResource(R.string.home_screen_add_document_option_online),
+                        leadingIcon = AppIcons.PresentDocumentOnline,
+                        event = Event.BottomSheet.Authenticate.OpenAuthenticateOnLine,
+                    )
+                ),
+                onEventSent = { event ->
+                    onEventSent(event)
+                }
+            )
         }
 
         is HomeScreenBottomSheetContent.Sign -> {
-            WrapModalBottomSheet(
-                onDismissRequest = {
-                    onEventSent(Event.BottomSheet.UpdateBottomSheetState(isOpen = false))
-                },
-                sheetState = modalBottomSheetState
-            ) {
-                BottomSheetWithTwoBigIcons(
-                    textData = BottomSheetTextDataUi(
-                        title = stringResource(R.string.home_screen_sign_document),
-                        message = stringResource(R.string.home_screen_sign_document_description)
+            BottomSheetWithTwoBigIcons(
+                textData = BottomSheetTextDataUi(
+                    title = stringResource(R.string.home_screen_sign_document),
+                    message = stringResource(R.string.home_screen_sign_document_description)
+                ),
+                options = listOf(
+                    ModalOptionUi(
+                        title = stringResource(R.string.home_screen_sign_document_option_from_device),
+                        leadingIcon = AppIcons.SignDocumentFromDevice,
+                        leadingIconTint = MaterialTheme.colorScheme.primary,
+                        event = Event.BottomSheet.SignDocument.OpenFromDevice,
                     ),
-                    options = listOf(
-                        ModalOptionUi(
-                            title = stringResource(R.string.home_screen_sign_document_option_from_device),
-                            leadingIcon = AppIcons.SignDocumentFromDevice,
-                            leadingIconTint = MaterialTheme.colorScheme.primary,
-                            event = Event.BottomSheet.SignDocument.OpenFromDevice,
-                        ),
-                        ModalOptionUi(
-                            title = stringResource(R.string.home_screen_sign_document_option_scan_qr),
-                            leadingIcon = AppIcons.SignDocumentFromQr,
-                            leadingIconTint = MaterialTheme.colorScheme.primary,
-                            event = Event.BottomSheet.SignDocument.OpenScanQR,
-                        )
-                    ),
-                    onEventSent = { event ->
-                        onEventSent(event)
-                    }
-                )
-            }
+                    ModalOptionUi(
+                        title = stringResource(R.string.home_screen_sign_document_option_scan_qr),
+                        leadingIcon = AppIcons.SignDocumentFromQr,
+                        leadingIconTint = MaterialTheme.colorScheme.primary,
+                        event = Event.BottomSheet.SignDocument.OpenScanQR,
+                    )
+                ),
+                onEventSent = { event ->
+                    onEventSent(event)
+                }
+            )
         }
 
         is HomeScreenBottomSheetContent.LearnMoreAboutAuthenticate -> {
@@ -473,9 +446,11 @@ private fun RequiredPermissionsAsk(
 ) {
     val permissions: MutableList<String> = mutableListOf()
 
-    permissions.add(Manifest.permission.BLUETOOTH_ADVERTISE)
-    permissions.add(Manifest.permission.BLUETOOTH_SCAN)
-    permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        permissions.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+        permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+        permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+    }
 
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 && state.isBleCentralClientModeEnabled) {
         permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)

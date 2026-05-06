@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -18,12 +18,10 @@ package eu.europa.ec.dashboardfeature.ui.dashboard
 
 import android.content.Intent
 import android.net.Uri
-import eu.europa.ec.commonfeature.config.IssuanceFlowUiConfig
 import eu.europa.ec.commonfeature.config.OfferUiConfig
 import eu.europa.ec.commonfeature.config.PresentationMode
 import eu.europa.ec.commonfeature.config.RequestUriConfig
 import eu.europa.ec.commonfeature.model.PinFlow
-import eu.europa.ec.corelogic.di.getOrCreatePresentationScope
 import eu.europa.ec.corelogic.model.RevokedDocumentDataDomain
 import eu.europa.ec.dashboardfeature.interactor.DashboardInteractor
 import eu.europa.ec.dashboardfeature.ui.dashboard.model.SideMenuItemUi
@@ -42,11 +40,14 @@ import eu.europa.ec.uilogic.mvi.ViewState
 import eu.europa.ec.uilogic.navigation.CommonScreens
 import eu.europa.ec.uilogic.navigation.DashboardScreens
 import eu.europa.ec.uilogic.navigation.helper.DeepLinkType
+import eu.europa.ec.uilogic.navigation.helper.IntentAction
+import eu.europa.ec.uilogic.navigation.helper.IntentType
 import eu.europa.ec.uilogic.navigation.helper.generateComposableArguments
 import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
 import eu.europa.ec.uilogic.navigation.helper.hasDeepLink
+import eu.europa.ec.uilogic.navigation.helper.hasIntentAction
 import eu.europa.ec.uilogic.serializer.UiSerializer
-import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.KoinViewModel
 
 data class State(
 
@@ -64,7 +65,10 @@ data class State(
 ) : ViewState
 
 sealed class Event : ViewEvent {
-    data class Init(val deepLinkUri: Uri?) : Event()
+    data class Init(
+        val intent: Intent?
+    ) : Event()
+
     data object Pop : Event()
 
     data class DocumentRevocationNotificationReceived(
@@ -100,6 +104,11 @@ sealed class Effect : ViewSideEffect {
 
         data class OpenDeepLinkAction(val deepLinkUri: Uri, val arguments: String?) :
             Navigation()
+
+        data class OpenIntentAction(
+            val intentAction: IntentAction,
+            val arguments: String?
+        ) : Navigation()
 
         data object OnAppSettings : Navigation()
         data object OnSystemSettings : Navigation()
@@ -137,7 +146,7 @@ class DashboardViewModel(
 
     override fun handleEvents(event: Event) {
         when (event) {
-            is Event.Init -> handleDeepLink(event.deepLinkUri)
+            is Event.Init -> handleDeepLink(event.intent)
 
             is Event.Pop -> setEffect { Effect.Navigation.Pop }
 
@@ -192,7 +201,6 @@ class DashboardViewModel(
                     screen = DashboardScreens.DocumentDetails,
                     arguments = generateComposableArguments(
                         mapOf(
-                            "detailsType" to IssuanceFlowUiConfig.EXTRA_DOCUMENT,
                             "documentId" to docId
                         )
                     )
@@ -260,12 +268,11 @@ class DashboardViewModel(
         }
     }
 
-    private fun handleDeepLink(deepLinkUri: Uri?) {
-        deepLinkUri?.let { uri ->
+    private fun handleDeepLink(intent: Intent?) {
+        intent?.data?.let { uri ->
             hasDeepLink(uri)?.let {
                 val arguments: String? = when (it.type) {
                     DeepLinkType.OPENID4VP -> {
-                        getOrCreatePresentationScope()
                         generateComposableArguments(
                             mapOf(
                                 RequestUriConfig.serializedKeyName to uiSerializer.toBase64(
@@ -281,24 +288,26 @@ class DashboardViewModel(
                         )
                     }
 
-                    DeepLinkType.CREDENTIAL_OFFER -> generateComposableArguments(
-                        mapOf(
-                            OfferUiConfig.serializedKeyName to uiSerializer.toBase64(
-                                OfferUiConfig(
-                                    offerURI = it.link.toString(),
-                                    onSuccessNavigation = ConfigNavigation(
-                                        navigationType = NavigationType.PopTo(
-                                            screen = DashboardScreens.Dashboard
+                    DeepLinkType.CREDENTIAL_OFFER -> {
+                        generateComposableArguments(
+                            mapOf(
+                                OfferUiConfig.serializedKeyName to uiSerializer.toBase64(
+                                    OfferUiConfig(
+                                        offerUri = it.link.toString(),
+                                        onSuccessNavigation = ConfigNavigation(
+                                            navigationType = NavigationType.PopTo(
+                                                screen = DashboardScreens.Dashboard
+                                            )
+                                        ),
+                                        onCancelNavigation = ConfigNavigation(
+                                            navigationType = NavigationType.Pop
                                         )
                                     ),
-                                    onCancelNavigation = ConfigNavigation(
-                                        navigationType = NavigationType.Pop
-                                    )
-                                ),
-                                OfferUiConfig.Parser
+                                    OfferUiConfig.Parser
+                                )
                             )
                         )
-                    )
+                    }
 
                     else -> null
                 }
@@ -307,6 +316,30 @@ class DashboardViewModel(
                         deepLinkUri = uri,
                         arguments = arguments
                     )
+                }
+            }
+        } ?: hasIntentAction(intent)?.let { action ->
+            when (action.type) {
+                IntentType.DC_API -> {
+                    val arguments: String = generateComposableArguments(
+                        mapOf(
+                            RequestUriConfig.serializedKeyName to uiSerializer.toBase64(
+                                RequestUriConfig(
+                                    PresentationMode.DcApi(
+                                        initiatorRoute = DashboardScreens.Dashboard.screenRoute
+                                    )
+                                ),
+                                RequestUriConfig.Parser
+                            )
+                        )
+                    )
+
+                    setEffect {
+                        Effect.Navigation.OpenIntentAction(
+                            intentAction = action,
+                            arguments = arguments
+                        )
+                    }
                 }
             }
         }

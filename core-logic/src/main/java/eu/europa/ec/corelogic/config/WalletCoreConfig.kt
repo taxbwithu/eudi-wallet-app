@@ -21,6 +21,7 @@ import eu.europa.ec.corelogic.model.DocumentCategory
 import eu.europa.ec.corelogic.model.DocumentIdentifier
 import eu.europa.ec.eudi.wallet.EudiWalletConfig
 import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings.CredentialPolicy
+import eu.europa.ec.eudi.wallet.issue.openid4vci.OpenId4VciManager
 import java.time.Duration
 
 interface WalletCoreConfig {
@@ -32,6 +33,15 @@ interface WalletCoreConfig {
      * and storage locations.
      */
     val config: EudiWalletConfig
+
+    /**
+     * A list of configurations for Verifiable Credentials Issuance (VCI) using OpenID4VCI.
+     *
+     * Each element in the list is an [VciConfig] object, which contains:
+     * - The [OpenId4VciManager.Config] required to communicate with a specific issuer.
+     * - An `order` property to determine the display order of the issuer.
+     */
+    val issuersConfig: List<VciConfig>
 
     /**
      * Returns a predefined set of document categories and their associated identifiers.
@@ -158,8 +168,8 @@ interface WalletCoreConfig {
     /**
      * Configuration for document issuance, including default rules and specific overrides.
      *
-     * This property defines the behavior for how many credentials of each document type are issued
-     * and their usage policy (e.g., rotate use, one-time use).
+     * This property defines the behavior for how many credentials of each document type are issued,
+     * the background re-issuance policy and their usage policy (e.g., rotate use, one-time use).
      *
      * It consists of:
      * - `defaultRule`: A [DocumentIssuanceRule] that applies to all document types unless overridden.
@@ -167,6 +177,7 @@ interface WalletCoreConfig {
      * - `documentSpecificRules`: A map allowing overrides for specific document types.
      *   - Keys are [DocumentIdentifier] objects representing specific document types.
      *   - Values are [DocumentIssuanceRule] objects defining the policy and number of credentials for that document.
+     * - `reissuanceRule`: A [ReIssuanceRule] that defines the background re-issuance policy.
      *
      * For example:
      * - [DocumentIdentifier.MdocPid] is configured for [CredentialPolicy.OneTimeUse] with 10 credentials.
@@ -175,20 +186,9 @@ interface WalletCoreConfig {
      * Any document type not listed in `documentSpecificRules` will use the `defaultRule`.
      */
     val documentIssuanceConfig: DocumentIssuanceConfig
-        get() = DocumentIssuanceConfig(
-            defaultRule = DocumentIssuanceRule(
-                policy = CredentialPolicy.RotateUse,
-                numberOfCredentials = 1
-            ),
-            documentSpecificRules = mapOf(
-                DocumentIdentifier.MdocPid to DocumentIssuanceRule(
-                    policy = CredentialPolicy.OneTimeUse,
-                    numberOfCredentials = 10
-                ),
-                DocumentIdentifier.SdJwtPid to DocumentIssuanceRule(
-                    policy = CredentialPolicy.OneTimeUse,
-                    numberOfCredentials = 10
-                ),
-            )
-        )
+
+    /**
+     * Host for the Wallet Provider.
+     */
+    val walletProviderHost: String
 }

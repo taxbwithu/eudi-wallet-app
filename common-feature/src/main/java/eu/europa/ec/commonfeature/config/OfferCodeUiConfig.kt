@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -25,7 +25,7 @@ import eu.europa.ec.uilogic.serializer.UiSerializableParser
 import eu.europa.ec.uilogic.serializer.adapter.SerializableTypeAdapter
 
 data class OfferCodeUiConfig(
-    val offerURI: String,
+    val offerUri: String,
     val txCodeLength: Int,
     val issuerName: String,
     val onSuccessNavigation: ConfigNavigation
@@ -34,10 +34,12 @@ data class OfferCodeUiConfig(
     companion object Parser : UiSerializableParser {
         override val serializedKeyName = "offerCodeConfig"
         override fun provideParser(): Gson {
-            return GsonBuilder().registerTypeAdapter(
-                NavigationType::class.java,
-                SerializableTypeAdapter<NavigationType>()
-            ).create()
+            return GsonBuilder()
+                .registerTypeAdapter(
+                    NavigationType::class.java,
+                    SerializableTypeAdapter<NavigationType>()
+                )
+                .create()
         }
     }
 }

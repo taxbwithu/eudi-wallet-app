@@ -36,6 +36,8 @@ enum class LibraryModule(val path: String) {
     PresentationFeature(":presentation-feature"),
     ProximityFeature(":proximity-feature"),
     DocumentManager(":document-manager"),
+    WalletCore(":wallet-core"),
+    NimbusJoseJwt(":nimbus-jose-jwt"),
     IssuanceFeature(":issuance-feature");
 
     val isLogicModule: Boolean

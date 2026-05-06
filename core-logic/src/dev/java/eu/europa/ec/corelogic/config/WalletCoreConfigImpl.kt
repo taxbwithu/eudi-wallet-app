@@ -18,20 +18,23 @@ package eu.europa.ec.corelogic.config
 
 import android.content.Context
 import eu.europa.ec.corelogic.BuildConfig
+import eu.europa.ec.corelogic.model.DocumentIdentifier
 import eu.europa.ec.eudi.wallet.EudiWalletConfig
+import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings.CredentialPolicy
 import eu.europa.ec.eudi.wallet.issue.openid4vci.OpenId4VciManager
+import eu.europa.ec.eudi.wallet.issue.openid4vci.dpop.DPopConfig
 import eu.europa.ec.eudi.wallet.transfer.openId4vp.ClientIdScheme
-import eu.europa.ec.eudi.wallet.transfer.openId4vp.EncryptionAlgorithm
-import eu.europa.ec.eudi.wallet.transfer.openId4vp.EncryptionMethod
 import eu.europa.ec.eudi.wallet.transfer.openId4vp.Format
 import eu.europa.ec.resourceslogic.R
+import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 internal class WalletCoreConfigImpl(
     private val context: Context
 ) : WalletCoreConfig {
 
     private companion object {
-        const val VCI_ISSUER_URL = "https://eudiw-issuer.duckdns.org:5000"
+        const val VCI_ISSUER_URL = "https://eudi-issuer-frontend.duckdns.org"
         const val VCI_CLIENT_ID = "wallet-dev"
         const val AUTHENTICATION_REQUIRED = false
     }
@@ -43,40 +46,32 @@ internal class WalletCoreConfigImpl(
             if (_config == null) {
                 _config = EudiWalletConfig {
                     configureDocumentKeyCreation(
-                        userAuthenticationRequired = AUTHENTICATION_REQUIRED,
-                        userAuthenticationTimeout = 30_000L,
+                        userAuthenticationRequired = false,
+                        userAuthenticationTimeout = 30.seconds,
                         useStrongBoxForKeys = true
                     )
                     configureOpenId4Vp {
-                        withEncryptionAlgorithms(listOf(EncryptionAlgorithm.ECDH_ES))
-                        withEncryptionMethods(
-                            listOf(
-                                EncryptionMethod.A128CBC_HS256,
-                                EncryptionMethod.A256GCM
-                            )
-                        )
-
                         withClientIdSchemes(
-                            listOf(ClientIdScheme.X509SanDns)
+                            listOf(
+                                ClientIdScheme.X509SanDns,
+                                ClientIdScheme.X509Hash
+                            )
                         )
                         withSchemes(
                             listOf(
                                 BuildConfig.OPENID4VP_SCHEME,
                                 BuildConfig.EUDI_OPENID4VP_SCHEME,
-                                BuildConfig.MDOC_OPENID4VP_SCHEME
+                                BuildConfig.MDOC_OPENID4VP_SCHEME,
+                                BuildConfig.HAIP_OPENID4VP_SCHEME
                             )
                         )
                         withFormats(
-                            Format.MsoMdoc, Format.SdJwtVc.ES256
+                            Format.PqcJwtVc.ML_DSA_44
                         )
                     }
 
-                    configureOpenId4Vci {
-                        withIssuerUrl(issuerUrl = VCI_ISSUER_URL)
-                        withClientId(clientId = VCI_CLIENT_ID)
-                        withAuthFlowRedirectionURI(BuildConfig.ISSUE_AUTHORIZATION_DEEPLINK)
-                        withParUsage(OpenId4VciManager.Config.ParUsage.IF_SUPPORTED)
-                        withUseDPoPIfSupported(true)
+                    configureDCAPI {
+                        withEnabled(false)
                     }
 
                     configureReaderTrustStore(
@@ -87,10 +82,62 @@ internal class WalletCoreConfigImpl(
                         R.raw.pidissuerca02_lu,
                         R.raw.pidissuerca02_nl,
                         R.raw.pidissuerca02_pt,
-                        R.raw.pidissuerca02_ut
+                        R.raw.pidissuerca02_ut,
+                        R.raw.dc4eu,
+                        R.raw.r45_staging
                     )
                 }
             }
             return _config!!
         }
+
+    override val issuersConfig: List<VciConfig>
+        get() = listOf(
+            VciConfig(
+                config = OpenId4VciManager.Config.Builder()
+                    .withIssuerUrl(issuerUrl = VCI_ISSUER_URL)
+                    .withClientAuthenticationType(OpenId4VciManager.ClientAuthenticationType.None(clientId = VCI_CLIENT_ID))
+                    .withAuthFlowRedirectionURI(BuildConfig.ISSUE_AUTHORIZATION_DEEPLINK)
+                    .withParUsage(OpenId4VciManager.Config.ParUsage.IF_SUPPORTED)
+                    .withDPopConfig(DPopConfig.Default)
+                    .build(),
+                order = 0
+            ),
+            VciConfig(
+                config = OpenId4VciManager.Config.Builder()
+                    .withIssuerUrl(issuerUrl = VCI_ISSUER_URL)
+                    .withClientAuthenticationType(OpenId4VciManager.ClientAuthenticationType.None(clientId = VCI_CLIENT_ID))
+                    .withAuthFlowRedirectionURI(BuildConfig.ISSUE_AUTHORIZATION_DEEPLINK)
+                    .withParUsage(OpenId4VciManager.Config.ParUsage.IF_SUPPORTED)
+                    .withDPopConfig(DPopConfig.Default)
+                    .build(),
+                order = 1
+            )
+        )
+
+    override val documentIssuanceConfig: DocumentIssuanceConfig
+        get() = DocumentIssuanceConfig(
+            defaultRule = DocumentIssuanceRule(
+                policy = CredentialPolicy.RotateUse,
+                numberOfCredentials = 1
+            ),
+            documentSpecificRules = mapOf(
+                DocumentIdentifier.MdocPid to DocumentIssuanceRule(
+                    policy = CredentialPolicy.OneTimeUse,
+                    numberOfCredentials = 60
+                ),
+                DocumentIdentifier.SdJwtPid to DocumentIssuanceRule(
+                    policy = CredentialPolicy.OneTimeUse,
+                    numberOfCredentials = 60
+                ),
+            ),
+            reissuanceRule = ReIssuanceRule(
+                minNumberOfCredentials = 2,
+                minExpirationHours = 24,
+                backgroundInterval = Duration.ofMinutes(15)
+            )
+        )
+
+    override val walletProviderHost: String
+        get() = "https://dev.wallet-provider.eudiw.dev"
 }

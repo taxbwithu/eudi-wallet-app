@@ -42,6 +42,7 @@ android {
     defaultConfig {
         applicationId = "eu.europa.ec.euidi"
         versionCode = 1
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -59,7 +60,10 @@ android {
             isMinifyEnabled = true
             applicationIdSuffix = AppBuildType.RELEASE.applicationIdSuffix
             signingConfig = signingConfigs.getByName("release")
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 

@@ -91,6 +91,7 @@
 -dontwarn org.koin.androidx.viewmodel.GetViewModelKt
 -dontwarn org.koin.compose.stable.StableHoldersKt
 -dontwarn org.koin.compose.stable.StableParametersDefinition
+-dontwarn okhttp3.internal.Util
 
 # Retrofit
 -keep,allowobfuscation,allowshrinking interface retrofit2.Call
@@ -101,6 +102,10 @@
 
 # API Models
 -keep class eu.europa.ec.networklogic.model.** { *; }
+
+# Core Configuration
+-keep interface eu.europa.ec.corelogic.config.WalletCoreConfig
+-keepclassmembers class * implements eu.europa.ec.corelogic.config.WalletCoreConfig { *; }
 
 # Enum
 -keep enum * { *; }

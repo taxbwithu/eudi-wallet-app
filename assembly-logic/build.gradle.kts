@@ -14,12 +14,16 @@
  * governing permissions and limitations under the Licence.
  */
 
+import com.android.build.api.dsl.LibraryExtension
 import project.convention.logic.config.LibraryModule.AnalyticsLogic
 import project.convention.logic.config.LibraryModule.AssemblyLogic
 import project.convention.logic.config.LibraryModule.AuthenticationLogic
 import project.convention.logic.config.LibraryModule.BusinessLogic
 import project.convention.logic.config.LibraryModule.CommonFeature
 import project.convention.logic.config.LibraryModule.CoreLogic
+import project.convention.logic.config.LibraryModule.DocumentManager
+import project.convention.logic.config.LibraryModule.WalletCore
+import project.convention.logic.config.LibraryModule.NimbusJoseJwt
 import project.convention.logic.config.LibraryModule.DashboardFeature
 import project.convention.logic.config.LibraryModule.IssuanceFeature
 import project.convention.logic.config.LibraryModule.NetworkLogic
@@ -39,7 +43,7 @@ plugins {
     id("project.rqes.sdk")
 }
 
-android {
+extensions.configure<LibraryExtension>("android") {
     namespace = "eu.europa.ec.assemblylogic"
 
     defaultConfig {
@@ -62,6 +66,7 @@ dependencies {
     api(project(AnalyticsLogic.path))
     api(project(AuthenticationLogic.path))
     api(project(CoreLogic.path))
+    api(project(DocumentManager.path))
     api(project(StorageLogic.path))
 
     // Feature Modules

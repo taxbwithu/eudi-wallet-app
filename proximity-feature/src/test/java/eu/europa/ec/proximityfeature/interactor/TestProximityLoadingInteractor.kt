@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -38,6 +38,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
+import org.mockito.Mockito.mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
@@ -269,9 +270,11 @@ class TestProximityLoadingInteractor {
                 errorMessage = mockedPlainFailureMessage
             )
         )
-        val mockedOnAuthenticationFailure: () -> Unit = {}
-        whenever(resultHandler.onAuthenticationFailure)
-            .thenReturn(mockedOnAuthenticationFailure)
+
+        val onFailure = mock<() -> Unit>()
+        val resultHandler = DeviceAuthenticationResult(
+            onAuthenticationFailure = onFailure
+        )
 
         // When
         interactor.handleUserAuthentication(
@@ -282,10 +285,23 @@ class TestProximityLoadingInteractor {
         )
 
         // Then
-        verify(resultHandler, times(1))
-            .onAuthenticationFailure
+        verify(onFailure).invoke()
     }
 
+    //endregion
+
+    //region setScopeId
+    @Test
+    fun `Given a scopeId, When setScopeId is called, Then Verify presentationScopeId is set to the provided scopeId`() {
+        // Given
+        val mockScopeId = "mockScopeId"
+
+        // When
+        interactor.setScopeId(mockScopeId)
+
+        // Then
+        assertEquals(interactor.presentationScopeId, mockScopeId)
+    }
     //endregion
 
     //region helper functions

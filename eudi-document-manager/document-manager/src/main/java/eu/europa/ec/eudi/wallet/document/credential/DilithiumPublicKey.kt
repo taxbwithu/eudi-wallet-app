@@ -19,6 +19,7 @@ package eu.europa.ec.eudi.wallet.document.credential
 import java.security.PublicKey
 
 class DilithiumPublicKey(private val encodedKey: ByteArray) : PublicKey {
+    // TODO MM Restore to Dilithium3
     override fun getAlgorithm(): String = "Dilithium3"
     override fun getFormat(): String = "RAW"
     override fun getEncoded(): ByteArray = encodedKey

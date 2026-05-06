@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -24,22 +24,25 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import eu.europa.ec.dashboardfeature.util.TestTag
 import eu.europa.ec.resourceslogic.R
 import eu.europa.ec.uilogic.component.AppIcons
 import eu.europa.ec.uilogic.component.IconDataUi
 import eu.europa.ec.uilogic.component.preview.PreviewTheme
 import eu.europa.ec.uilogic.component.preview.ThemeModePreviews
 import eu.europa.ec.uilogic.component.wrap.WrapIcon
+import eu.europa.ec.uilogic.extension.applyTestTag
 
 sealed class BottomNavigationItem(
     val route: String,
-    @StringRes val titleRes: Int,
+    @param:StringRes val titleRes: Int,
     val icon: IconDataUi,
 ) {
     data object Home : BottomNavigationItem(
@@ -77,6 +80,11 @@ fun BottomNavigationBar(navController: NavController) {
     ) {
         navItems.forEach { screen ->
             NavigationBarItem(
+                modifier = Modifier.applyTestTag(
+                    TestTag.DashboardScreen.bottomNavigationItem(
+                        navItem = screen.route.lowercase()
+                    )
+                ),
                 icon = {
                     WrapIcon(
                         iconData = screen.icon,
@@ -86,7 +94,8 @@ fun BottomNavigationBar(navController: NavController) {
                 colors = NavigationBarItemDefaults.colors()
                     .copy(
                         selectedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        selectedIconColor = MaterialTheme.colorScheme.onPrimary
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 selected = currentDestination?.hierarchy?.any {
                     it.route == screen.route

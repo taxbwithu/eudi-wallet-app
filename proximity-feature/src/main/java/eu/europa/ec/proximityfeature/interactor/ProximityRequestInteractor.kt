@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -18,8 +18,8 @@ package eu.europa.ec.proximityfeature.interactor
 
 import eu.europa.ec.businesslogic.extension.safeAsync
 import eu.europa.ec.businesslogic.provider.UuidProvider
-import eu.europa.ec.commonfeature.config.RequestUriConfig
-import eu.europa.ec.commonfeature.config.toDomainConfig
+import eu.europa.ec.commonfeature.interactor.ScopedPresentationInteractor
+import eu.europa.ec.commonfeature.interactor.ScopedPresentationInteractorDelegate
 import eu.europa.ec.commonfeature.ui.request.model.RequestDocumentItemUi
 import eu.europa.ec.commonfeature.ui.request.transformer.RequestTransformer
 import eu.europa.ec.corelogic.controller.TransferEventPartialState
@@ -45,26 +45,22 @@ sealed class ProximityRequestInteractorPartialState {
     data object Disconnect : ProximityRequestInteractorPartialState()
 }
 
-interface ProximityRequestInteractor {
+interface ProximityRequestInteractor : ScopedPresentationInteractor {
     fun getRequestDocuments(): Flow<ProximityRequestInteractorPartialState>
     fun stopPresentation()
     fun updateRequestedDocuments(items: List<RequestDocumentItemUi>)
-    fun setConfig(config: RequestUriConfig)
 }
 
 class ProximityRequestInteractorImpl(
     private val resourceProvider: ResourceProvider,
     private val uuidProvider: UuidProvider,
-    private val walletCorePresentationController: WalletCorePresentationController,
-    private val walletCoreDocumentsController: WalletCoreDocumentsController
-) : ProximityRequestInteractor {
+    private val walletCoreDocumentsController: WalletCoreDocumentsController,
+    walletCorePresentationController: WalletCorePresentationController? = null
+) : ProximityRequestInteractor,
+    ScopedPresentationInteractorDelegate(walletCorePresentationController) {
 
     private val genericErrorMsg
         get() = resourceProvider.genericErrorMessage()
-
-    override fun setConfig(config: RequestUriConfig) {
-        walletCorePresentationController.setConfig(config.toDomainConfig())
-    }
 
     override fun getRequestDocuments(): Flow<ProximityRequestInteractorPartialState> =
         walletCorePresentationController.events.mapNotNull { response ->

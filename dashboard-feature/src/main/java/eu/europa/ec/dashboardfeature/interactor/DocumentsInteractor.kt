@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -16,7 +16,7 @@
 
 package eu.europa.ec.dashboardfeature.interactor
 
-import eu.europa.ec.businesslogic.controller.storage.PrefKeys
+import eu.europa.ec.businesslogic.config.ConfigLogic
 import eu.europa.ec.businesslogic.extension.isBeyondNextDays
 import eu.europa.ec.businesslogic.extension.isExpired
 import eu.europa.ec.businesslogic.extension.isValid
@@ -69,6 +69,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -169,7 +170,7 @@ class DocumentsInteractorImpl(
     private val resourceProvider: ResourceProvider,
     private val walletCoreDocumentsController: WalletCoreDocumentsController,
     private val filterValidator: FilterValidator,
-    private val prefKeys: PrefKeys,
+    private val configLogic: ConfigLogic
 ) : DocumentsInteractor {
 
     private val genericErrorMsg
@@ -306,6 +307,7 @@ class DocumentsInteractorImpl(
                                 document.localizedIssuerMetadata(userLocale)
 
                             val issuerName = localizedIssuerMetadata?.name
+                                ?: resourceProvider.getString(R.string.documents_screen_filters_unknown_issuer)
 
                             val documentIdentifier = document.toDocumentIdentifier()
 
@@ -317,7 +319,7 @@ class DocumentsInteractorImpl(
 
                             val documentSearchTags = buildList {
                                 add(documentName)
-                                if (!issuerName.isNullOrBlank()) {
+                                if (issuerName.isNotBlank()) {
                                     add(issuerName)
                                 }
                             }
@@ -331,13 +333,13 @@ class DocumentsInteractorImpl(
 
                             val documentIssuanceState = when {
                                 documentIsRevoked -> DocumentIssuanceStateUi.Revoked
-                                documentHasExpired == true -> DocumentIssuanceStateUi.Failed
+                                documentHasExpired -> DocumentIssuanceStateUi.Failed
                                 else -> DocumentIssuanceStateUi.Issued
                             }
 
                             val supportingText = when {
                                 documentIsRevoked -> resourceProvider.getString(R.string.dashboard_document_revoked)
-                                documentHasExpired == true -> resourceProvider.getString(R.string.dashboard_document_has_expired)
+                                documentHasExpired -> resourceProvider.getString(R.string.dashboard_document_has_expired)
                                 documentExpirationDate == null -> null
                                 else -> resourceProvider.getString(
                                     R.string.dashboard_document_has_not_expired,
@@ -351,27 +353,31 @@ class DocumentsInteractorImpl(
                                     tint = ThemeColors.error
                                 )
                             } else {
-                                if (prefKeys.getShowBatchIssuanceCounter()) {
-                                    val documentAvailableCredentials = document.credentialsCount()
-                                    val documentTotalCredentials =
-                                        document.initialCredentialsCount()
+                                val documentAvailableCredentials = document.credentialsCount()
+                                val documentTotalCredentials = document.initialCredentialsCount()
 
-                                    val documentCredentialsInfoUi = DocumentCredentialsInfoUi(
-                                        availableCredentials = documentAvailableCredentials,
-                                        totalCredentials = documentTotalCredentials,
-                                        title = resourceProvider.getString(
-                                            R.string.dashboard_document_credentials_info_text,
-                                            documentAvailableCredentials,
-                                            documentTotalCredentials
-                                        )
+                                val documentCredentialsInfoUi = DocumentCredentialsInfoUi(
+                                    availableCredentials = documentAvailableCredentials,
+                                    totalCredentials = documentTotalCredentials,
+                                    title = resourceProvider.getString(
+                                        R.string.dashboard_document_credentials_info_text,
+                                        documentAvailableCredentials,
+                                        documentTotalCredentials
                                     )
+                                )
 
+                                val documentLowOnCredentials = walletCoreDocumentsController
+                                    .isDocumentLowOnCredentials(document)
+
+                                if (documentLowOnCredentials) {
                                     ListItemTrailingContentDataUi.TextWithIcon(
                                         text = documentCredentialsInfoUi.title,
-                                        iconData = AppIcons.KeyboardArrowRight
+                                        iconData = AppIcons.ErrorFilled,
+                                        tint = ThemeColors.warning
                                     )
                                 } else {
-                                    ListItemTrailingContentDataUi.Icon(
+                                    ListItemTrailingContentDataUi.TextWithIcon(
+                                        text = documentCredentialsInfoUi.title,
                                         iconData = AppIcons.KeyboardArrowRight
                                     )
                                 }
@@ -412,6 +418,7 @@ class DocumentsInteractorImpl(
                                 document.localizedIssuerMetadata(userLocale)
 
                             val issuerName = localizedIssuerMetadata?.name
+                                ?: resourceProvider.getString(R.string.documents_screen_filters_unknown_issuer)
 
                             val documentIdentifier = document.toDocumentIdentifier()
 
@@ -423,7 +430,7 @@ class DocumentsInteractorImpl(
 
                             val documentSearchTags = buildList {
                                 add(documentName)
-                                if (!issuerName.isNullOrBlank()) {
+                                if (issuerName.isNotBlank()) {
                                     add(issuerName)
                                 }
                             }
@@ -504,7 +511,7 @@ class DocumentsInteractorImpl(
                     is DocumentInteractorRetryIssuingDeferredDocumentPartialState.NotReady -> {}
 
                     is DocumentInteractorRetryIssuingDeferredDocumentPartialState.Expired -> {
-                        deleteDocument(result.documentId)
+                        deleteDocument(result.documentId).lastOrNull()
                     }
                 }
             }
@@ -579,7 +586,9 @@ class DocumentsInteractorImpl(
                     }
 
                     is DeleteDocumentPartialState.Success -> {
-                        if (walletCoreDocumentsController.getAllDocuments().isEmpty()) {
+                        if (configLogic.forcePidActivation
+                            && walletCoreDocumentsController.getAllDocuments().isEmpty()
+                        ) {
                             emit(DocumentInteractorDeleteDocumentPartialState.AllDocumentsDeleted)
                         } else
                             emit(DocumentInteractorDeleteDocumentPartialState.SingleDocumentDeleted)
@@ -787,18 +796,14 @@ class DocumentsInteractorImpl(
     private fun addIssuerFilter(documents: FilterableList): List<FilterItem> {
         return documents.items
             .distinctBy { (it.attributes as DocumentsFilterableAttributes).issuer }
-            .mapNotNull { filterableItem ->
+            .map { filterableItem ->
                 with(filterableItem.attributes as DocumentsFilterableAttributes) {
-                    if (issuer != null) {
-                        FilterItem(
-                            id = issuer,
-                            name = issuer,
-                            selected = true,
-                            isDefault = true,
-                        )
-                    } else {
-                        null
-                    }
+                    FilterItem(
+                        id = issuer,
+                        name = issuer,
+                        selected = true,
+                        isDefault = true,
+                    )
                 }
             }
     }

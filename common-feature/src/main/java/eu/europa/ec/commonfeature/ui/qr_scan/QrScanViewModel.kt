@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -20,14 +20,13 @@ import android.content.Context
 import androidx.lifecycle.viewModelScope
 import eu.europa.ec.businesslogic.validator.Form
 import eu.europa.ec.businesslogic.validator.Rule
-import eu.europa.ec.commonfeature.config.IssuanceFlowUiConfig
+import eu.europa.ec.commonfeature.config.IssuanceFlowType
 import eu.europa.ec.commonfeature.config.OfferUiConfig
 import eu.europa.ec.commonfeature.config.PresentationMode
 import eu.europa.ec.commonfeature.config.QrScanFlow
 import eu.europa.ec.commonfeature.config.QrScanUiConfig
 import eu.europa.ec.commonfeature.config.RequestUriConfig
 import eu.europa.ec.commonfeature.interactor.QrScanInteractor
-import eu.europa.ec.corelogic.di.getOrCreatePresentationScope
 import eu.europa.ec.eudi.rqesui.domain.extension.toUriOrEmpty
 import eu.europa.ec.resourceslogic.R
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
@@ -44,8 +43,8 @@ import eu.europa.ec.uilogic.navigation.helper.generateComposableArguments
 import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
 import eu.europa.ec.uilogic.serializer.UiSerializer
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 
 private const val MAX_ALLOWED_FAILED_SCANS = 5
 
@@ -185,7 +184,11 @@ class QrScanViewModel(
     ) {
         when (qrScanFlow) {
             is QrScanFlow.Presentation -> navigateToPresentationRequest(scanResult)
-            is QrScanFlow.Issuance -> navigateToDocumentOffer(scanResult, qrScanFlow.issuanceFlow)
+            is QrScanFlow.Issuance -> navigateToDocumentOffer(
+                scanResult = scanResult,
+                issuanceFlowType = qrScanFlow.issuanceFlowType
+            )
+
             is QrScanFlow.Signature -> navigateToRqesSdk(context, scanResult)
         }
     }
@@ -204,7 +207,6 @@ class QrScanViewModel(
 
     private fun navigateToPresentationRequest(scanResult: String) {
         setEffect {
-            getOrCreatePresentationScope()
             Effect.Navigation.SwitchScreen(
                 screenRoute = generateComposableNavigationLink(
                     screen = PresentationScreens.PresentationRequest,
@@ -226,7 +228,7 @@ class QrScanViewModel(
         }
     }
 
-    private fun navigateToDocumentOffer(scanResult: String, issuanceFLow: IssuanceFlowUiConfig) {
+    private fun navigateToDocumentOffer(scanResult: String, issuanceFlowType: IssuanceFlowType) {
         setEffect {
             Effect.Navigation.SwitchScreen(
                 screenRoute = generateComposableNavigationLink(
@@ -235,9 +237,13 @@ class QrScanViewModel(
                         mapOf(
                             OfferUiConfig.serializedKeyName to uiSerializer.toBase64(
                                 OfferUiConfig(
-                                    offerURI = scanResult,
-                                    onSuccessNavigation = calculateOnSuccessNavigation(issuanceFLow),
-                                    onCancelNavigation = calculateOnCancelNavigation(issuanceFLow)
+                                    offerUri = scanResult,
+                                    onSuccessNavigation = calculateOnSuccessNavigation(
+                                        issuanceFlowType
+                                    ),
+                                    onCancelNavigation = calculateOnCancelNavigation(
+                                        issuanceFlowType
+                                    )
                                 ),
                                 OfferUiConfig.Parser
                             )
@@ -258,9 +264,9 @@ class QrScanViewModel(
         }
     }
 
-    private fun calculateOnSuccessNavigation(issuanceFlowUiConfig: IssuanceFlowUiConfig): ConfigNavigation {
-        return when (issuanceFlowUiConfig) {
-            IssuanceFlowUiConfig.NO_DOCUMENT -> {
+    private fun calculateOnSuccessNavigation(issuanceFlowType: IssuanceFlowType): ConfigNavigation {
+        return when (issuanceFlowType) {
+            is IssuanceFlowType.NoDocument -> {
                 ConfigNavigation(
                     navigationType = NavigationType.PushRoute(
                         route = DashboardScreens.Dashboard.screenRoute,
@@ -269,7 +275,7 @@ class QrScanViewModel(
                 )
             }
 
-            IssuanceFlowUiConfig.EXTRA_DOCUMENT -> {
+            is IssuanceFlowType.ExtraDocument -> {
                 ConfigNavigation(
                     navigationType = NavigationType.PopTo(
                         screen = DashboardScreens.Dashboard
@@ -279,19 +285,17 @@ class QrScanViewModel(
         }
     }
 
-    private fun calculateOnCancelNavigation(issuanceFlowUiConfig: IssuanceFlowUiConfig): ConfigNavigation {
-        return when (issuanceFlowUiConfig) {
-            IssuanceFlowUiConfig.NO_DOCUMENT -> {
+    private fun calculateOnCancelNavigation(issuanceFlowType: IssuanceFlowType): ConfigNavigation {
+        return when (issuanceFlowType) {
+            is IssuanceFlowType.NoDocument -> {
                 ConfigNavigation(
                     navigationType = NavigationType.Pop
                 )
             }
 
-            IssuanceFlowUiConfig.EXTRA_DOCUMENT -> {
+            is IssuanceFlowType.ExtraDocument -> {
                 ConfigNavigation(
-                    navigationType = NavigationType.PopTo(
-                        screen = DashboardScreens.Dashboard
-                    )
+                    navigationType = NavigationType.Pop
                 )
             }
         }

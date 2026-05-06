@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -20,10 +20,12 @@ import eu.europa.ec.analyticslogic.config.AnalyticsConfig
 import eu.europa.ec.analyticslogic.controller.AnalyticsController
 import eu.europa.ec.analyticslogic.controller.AnalyticsControllerImpl
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
 @Module
+@Configuration
 @ComponentScan("eu.europa.ec.analyticslogic")
 class LogicAnalyticsModule
 

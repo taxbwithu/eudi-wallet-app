@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import eu.europa.ec.commonfeature.config.OfferUiConfig
 import eu.europa.ec.corelogic.util.CoreActions
+import eu.europa.ec.issuancefeature.util.TestTag
 import eu.europa.ec.resourceslogic.R
 import eu.europa.ec.uilogic.component.ErrorInfo
 import eu.europa.ec.uilogic.component.ListItemDataUi
@@ -62,8 +63,9 @@ import eu.europa.ec.uilogic.component.wrap.WrapListItem
 import eu.europa.ec.uilogic.component.wrap.WrapStickyBottomContent
 import eu.europa.ec.uilogic.config.ConfigNavigation
 import eu.europa.ec.uilogic.config.NavigationType
-import eu.europa.ec.uilogic.extension.cacheDeepLink
-import eu.europa.ec.uilogic.extension.getPendingDeepLink
+import eu.europa.ec.uilogic.extension.applyTestTag
+import eu.europa.ec.uilogic.extension.cacheUri
+import eu.europa.ec.uilogic.extension.getPendingUri
 import eu.europa.ec.uilogic.navigation.DashboardScreens
 import eu.europa.ec.uilogic.navigation.IssuanceScreens
 import eu.europa.ec.uilogic.navigation.helper.handleDeepLinkAction
@@ -88,7 +90,8 @@ fun DocumentOfferScreen(
         onBack = { viewModel.setEvent(Event.BackButtonPressed) },
         stickyBottom = { paddingValues ->
             WrapStickyBottomContent(
-                stickyBottomModifier = Modifier
+                modifier = Modifier
+                    .applyTestTag(TestTag.DocumentOfferScreen.BUTTON)
                     .fillMaxWidth()
                     .padding(paddingValues),
                 stickyBottomConfig = StickyBottomConfig(
@@ -144,7 +147,7 @@ fun DocumentOfferScreen(
         lifecycleOwner = LocalLifecycleOwner.current,
         lifecycleEvent = Lifecycle.Event.ON_RESUME
     ) {
-        viewModel.setEvent(Event.Init(context.getPendingDeepLink()))
+        viewModel.setEvent(Event.Init(context.getPendingUri()))
     }
 }
 
@@ -163,6 +166,7 @@ private fun Content(
         ContentHeader(
             modifier = Modifier.fillMaxWidth(),
             config = state.headerConfig,
+            descriptionTestTag = TestTag.DocumentOfferScreen.CONTENT_HEADER_DESCRIPTION,
         )
 
         if (state.noDocument) {
@@ -234,7 +238,7 @@ private fun handleNavigationEffect(
 
         is Effect.Navigation.DeepLink -> {
             navigationEffect.routeToPop?.let {
-                context.cacheDeepLink(navigationEffect.link)
+                context.cacheUri(navigationEffect.link)
                 navController.popBackStack(
                     route = it,
                     inclusive = false
@@ -271,7 +275,7 @@ private fun ContentPreview() {
                 )
             ),
             offerUiConfig = OfferUiConfig(
-                offerURI = "",
+                offerUri = "",
                 onSuccessNavigation = ConfigNavigation(
                     navigationType = NavigationType.PushScreen(
                         screen = DashboardScreens.Dashboard,

@@ -170,6 +170,10 @@ public final class JWEAlgorithm extends Algorithm {
 	 */
 	public static final JWEAlgorithm ECDH_ES_A256KW = new JWEAlgorithm("ECDH-ES+A256KW", Requirement.RECOMMENDED);
 
+	public static final JWEAlgorithm DILITHIUM = new JWEAlgorithm("DILITHIUM", Requirement.RECOMMENDED);
+
+	public static final JWEAlgorithm ML_DSA_44 = new JWEAlgorithm("ML-DSA-44", Requirement.RECOMMENDED);
+
 
 	/**
 	 * Elliptic Curve Diffie-Hellman One-Pass Unified Model key

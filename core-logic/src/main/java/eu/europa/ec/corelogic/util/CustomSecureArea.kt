@@ -22,12 +22,15 @@ import org.multipaz.securearea.KeyAttestation
 import org.multipaz.securearea.KeyInfo
 import org.multipaz.securearea.KeyUnlockData
 import org.multipaz.securearea.SecureArea
+import org.multipaz.securearea.UnlockReason
 import org.multipaz.securearea.software.SoftwareCreateKeySettings
 import org.multipaz.storage.StorageEngine
 import java.security.KeyFactory
 import java.security.Signature
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 class CustomSecureArea(private val storageEngine: StorageEngine) : SecureArea {
     override val identifier get() = "AndroidKeystoreSecureArea"
@@ -131,7 +134,7 @@ class CustomSecureArea(private val storageEngine: StorageEngine) : SecureArea {
     override suspend fun keyAgreement(
         alias: String,
         otherKey: EcPublicKey,
-        keyUnlockData: KeyUnlockData?
+        unlockReason: UnlockReason
     ): ByteArray {
         TODO("Not yet implemented")
     }
@@ -139,7 +142,7 @@ class CustomSecureArea(private val storageEngine: StorageEngine) : SecureArea {
     override suspend fun sign(
         alias: String,
         dataToSign: ByteArray,
-        keyUnlockData: KeyUnlockData?
+        unlockReason: UnlockReason,
     ): EcSignature {
         val keyData = storageEngine["$PREFIX$alias"]
             ?: throw IllegalArgumentException("No key found for alias: $alias")
@@ -234,7 +237,7 @@ class CustomSecureArea(private val storageEngine: StorageEngine) : SecureArea {
     }
 
 
-    private fun derivePrivateKeyEncryptionKey(
+    /*private fun derivePrivateKeyEncryptionKey(
         encodedPublicKey: ByteArray,
         passphrase: String
     ): ByteArray {
@@ -246,10 +249,57 @@ class CustomSecureArea(private val storageEngine: StorageEngine) : SecureArea {
             info,
             32
         )
+    }*/
+
+    private fun derivePrivateKeyEncryptionKey(
+        encodedPublicKey: ByteArray,
+        passphrase: String
+    ): ByteArray {
+        val info = "ICPrivateKeyEncryption1".encodeToByteArray()
+        return hkdfSha256(
+            ikm = passphrase.encodeToByteArray(),
+            salt = encodedPublicKey,
+            info = info,
+            size = 32
+        )
+    }
+
+    private fun hkdfSha256(
+        ikm: ByteArray,
+        salt: ByteArray?,
+        info: ByteArray,
+        size: Int
+    ): ByteArray {
+        val mac = Mac.getInstance("HmacSHA256")
+        val effectiveSalt = if (salt == null || salt.isEmpty()) ByteArray(mac.macLength) else salt
+        // Extract
+        mac.init(SecretKeySpec(effectiveSalt, "HmacSHA256"))
+        val prk = mac.doFinal(ikm)
+
+        // Expand
+        mac.init(SecretKeySpec(prk, "HmacSHA256"))
+        val result = ByteArray(size)
+        var t = ByteArray(0)
+        var pos = 0
+        var counter = 1
+
+        while (pos < size) {
+            mac.update(t)
+            mac.update(info)
+            mac.update(counter.toByte())
+            t = mac.doFinal()
+
+            val toCopy = minOf(t.size, size - pos)
+            System.arraycopy(t, 0, result, pos, toCopy)
+            pos += toCopy
+            counter++
+        }
+
+        return result
     }
 
 
-    fun PublicKey.toEcPublicKey(): EcPublicKey {
+            fun PublicKey.toEcPublicKey(): EcPublicKey {
         val key = this.toCoseKey()
         return EcPublicKey.fromDataItem(key)
     }

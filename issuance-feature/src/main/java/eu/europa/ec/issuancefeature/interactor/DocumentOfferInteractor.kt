@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -20,6 +20,7 @@ import android.content.Context
 import eu.europa.ec.authenticationlogic.controller.authentication.BiometricsAvailability
 import eu.europa.ec.authenticationlogic.controller.authentication.DeviceAuthenticationResult
 import eu.europa.ec.authenticationlogic.model.BiometricCrypto
+import eu.europa.ec.businesslogic.config.ConfigLogic
 import eu.europa.ec.businesslogic.extension.safeAsync
 import eu.europa.ec.businesslogic.util.safeLet
 import eu.europa.ec.commonfeature.config.SuccessUIConfig
@@ -34,6 +35,7 @@ import eu.europa.ec.corelogic.extension.getName
 import eu.europa.ec.corelogic.model.DocumentIdentifier
 import eu.europa.ec.eudi.openid4vci.TxCodeInputMode
 import eu.europa.ec.eudi.wallet.document.DocumentId
+import eu.europa.ec.eudi.wallet.issue.openid4vci.Offer
 import eu.europa.ec.issuancefeature.ui.offer.model.DocumentOfferUi
 import eu.europa.ec.resourceslogic.R
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
@@ -84,6 +86,9 @@ sealed class IssueDocumentsInteractorPartialState {
 }
 
 interface DocumentOfferInteractor {
+
+    val credentialOffers: MutableMap<String, Offer>
+
     fun resolveDocumentOffer(offerUri: String): Flow<ResolveDocumentOfferInteractorPartialState>
 
     fun issueDocuments(
@@ -107,11 +112,14 @@ class DocumentOfferInteractorImpl(
     private val walletCoreDocumentsController: WalletCoreDocumentsController,
     private val deviceAuthenticationInteractor: DeviceAuthenticationInteractor,
     private val resourceProvider: ResourceProvider,
-    private val uiSerializer: UiSerializer
+    private val uiSerializer: UiSerializer,
+    private val configLogic: ConfigLogic
 ) : DocumentOfferInteractor {
 
     private val genericErrorMsg
         get() = resourceProvider.genericErrorMessage()
+
+    override val credentialOffers: MutableMap<String, Offer> = mutableMapOf()
 
     override fun resolveDocumentOffer(offerUri: String): Flow<ResolveDocumentOfferInteractorPartialState> =
         flow {
@@ -125,6 +133,9 @@ class DocumentOfferInteractorImpl(
                     }
 
                     is ResolveDocumentOfferPartialState.Success -> {
+
+                        credentialOffers[offerUri] = response.offer
+
                         val offerHasNoDocuments = response.offer.offeredDocuments.isEmpty()
                         if (offerHasNoDocuments) {
                             ResolveDocumentOfferInteractorPartialState.NoDocument(
@@ -161,7 +172,7 @@ class DocumentOfferInteractorImpl(
                                     id == DocumentIdentifier.MdocPid || id == DocumentIdentifier.SdJwtPid
                                 }
 
-                            if (hasMainPid || hasPidInOffer) {
+                            if (hasMainPid || hasPidInOffer || !configLogic.forcePidActivation) {
 
                                 ResolveDocumentOfferInteractorPartialState.Success(
                                     documents = response.offer.offeredDocuments.map { offeredDocument ->
@@ -199,49 +210,55 @@ class DocumentOfferInteractorImpl(
         txCode: String?
     ): Flow<IssueDocumentsInteractorPartialState> =
         flow {
-            walletCoreDocumentsController.issueDocumentsByOfferUri(
-                offerUri = offerUri,
-                txCode = txCode
-            ).map { response ->
-                when (response) {
-                    is IssueDocumentsPartialState.Failure -> {
-                        IssueDocumentsInteractorPartialState.Failure(errorMessage = response.errorMessage)
-                    }
+            credentialOffers[offerUri]?.let { offer ->
+                walletCoreDocumentsController.issueDocumentsByOffer(
+                    offer = offer,
+                    txCode = txCode
+                ).map { response ->
+                    when (response) {
+                        is IssueDocumentsPartialState.Failure -> {
+                            IssueDocumentsInteractorPartialState.Failure(errorMessage = response.errorMessage)
+                        }
 
-                    is IssueDocumentsPartialState.PartialSuccess -> {
-                        IssueDocumentsInteractorPartialState.Success(
-                            documentIds = response.documentIds
-                        )
-                    }
-
-                    is IssueDocumentsPartialState.Success -> {
-                        IssueDocumentsInteractorPartialState.Success(
-                            documentIds = response.documentIds
-                        )
-                    }
-
-                    is IssueDocumentsPartialState.UserAuthRequired -> {
-                        IssueDocumentsInteractorPartialState.UserAuthRequired(
-                            crypto = response.crypto,
-                            resultHandler = response.resultHandler
-                        )
-                    }
-
-                    is IssueDocumentsPartialState.DeferredSuccess -> {
-                        IssueDocumentsInteractorPartialState.DeferredSuccess(
-                            successRoute = buildGenericSuccessRouteForDeferred(
-                                description = resourceProvider.getString(
-                                    R.string.issuance_document_offer_deferred_success_description,
-                                    issuerName
-                                ),
-                                navigation = navigation
+                        is IssueDocumentsPartialState.PartialSuccess -> {
+                            IssueDocumentsInteractorPartialState.Success(
+                                documentIds = response.documentIds
                             )
-                        )
+                        }
+
+                        is IssueDocumentsPartialState.Success -> {
+                            IssueDocumentsInteractorPartialState.Success(
+                                documentIds = response.documentIds
+                            )
+                        }
+
+                        is IssueDocumentsPartialState.UserAuthRequired -> {
+                            IssueDocumentsInteractorPartialState.UserAuthRequired(
+                                crypto = response.crypto,
+                                resultHandler = response.resultHandler
+                            )
+                        }
+
+                        is IssueDocumentsPartialState.DeferredSuccess -> {
+                            IssueDocumentsInteractorPartialState.DeferredSuccess(
+                                successRoute = buildGenericSuccessRouteForDeferred(
+                                    description = resourceProvider.getString(
+                                        R.string.issuance_document_offer_deferred_success_description,
+                                        issuerName
+                                    ),
+                                    navigation = navigation
+                                )
+                            )
+                        }
                     }
+                }.collect {
+                    emit(it)
                 }
-            }.collect {
-                emit(it)
-            }
+            } ?: emit(
+                IssueDocumentsInteractorPartialState.Failure(
+                    errorMessage = genericErrorMsg
+                )
+            )
         }.safeAsync {
             IssueDocumentsInteractorPartialState.Failure(
                 errorMessage = it.localizedMessage ?: genericErrorMsg

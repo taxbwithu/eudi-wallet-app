@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -16,18 +16,28 @@
 
 package eu.europa.ec.dashboardfeature.ui.documents.detail
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.viewModelScope
+import eu.europa.ec.authenticationlogic.controller.authentication.DeviceAuthenticationResult
+import eu.europa.ec.commonfeature.config.PresentationMode
+import eu.europa.ec.commonfeature.config.RequestUriConfig
 import eu.europa.ec.dashboardfeature.interactor.DocumentDetailsInteractor
 import eu.europa.ec.dashboardfeature.interactor.DocumentDetailsInteractorDeleteBookmarkPartialState
 import eu.europa.ec.dashboardfeature.interactor.DocumentDetailsInteractorDeleteDocumentPartialState
+import eu.europa.ec.dashboardfeature.interactor.DocumentDetailsInteractorIssuancePartialState
 import eu.europa.ec.dashboardfeature.interactor.DocumentDetailsInteractorPartialState
 import eu.europa.ec.dashboardfeature.interactor.DocumentDetailsInteractorStoreBookmarkPartialState
+import eu.europa.ec.dashboardfeature.ui.documents.detail.DocumentDetailsBottomSheetContent.BookmarkRemovedInfo
+import eu.europa.ec.dashboardfeature.ui.documents.detail.DocumentDetailsBottomSheetContent.BookmarkStoredInfo
+import eu.europa.ec.dashboardfeature.ui.documents.detail.DocumentDetailsBottomSheetContent.TrustedRelyingPartyInfo
 import eu.europa.ec.dashboardfeature.ui.documents.detail.model.DocumentDetailsUi
 import eu.europa.ec.dashboardfeature.ui.documents.detail.transformer.DocumentDetailsTransformer.transformToDocumentDetailsUi
 import eu.europa.ec.dashboardfeature.ui.documents.model.DocumentCredentialsInfoUi
 import eu.europa.ec.eudi.wallet.document.DocumentId
 import eu.europa.ec.resourceslogic.R
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
+import eu.europa.ec.uilogic.component.IssuerDetailsCardDataUi
 import eu.europa.ec.uilogic.component.content.ContentErrorConfig
 import eu.europa.ec.uilogic.component.wrap.BottomSheetTextDataUi
 import eu.europa.ec.uilogic.extension.toggleExpansionState
@@ -36,35 +46,37 @@ import eu.europa.ec.uilogic.mvi.ViewEvent
 import eu.europa.ec.uilogic.mvi.ViewSideEffect
 import eu.europa.ec.uilogic.mvi.ViewState
 import eu.europa.ec.uilogic.navigation.DashboardScreens
+import eu.europa.ec.uilogic.navigation.PresentationScreens
 import eu.europa.ec.uilogic.navigation.StartupScreens
+import eu.europa.ec.uilogic.navigation.helper.DeepLinkType
+import eu.europa.ec.uilogic.navigation.helper.generateComposableArguments
+import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
+import eu.europa.ec.uilogic.navigation.helper.hasDeepLink
+import eu.europa.ec.uilogic.serializer.UiSerializer
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
-import java.net.URI
+import org.koin.core.annotation.KoinViewModel
 
 data class State(
     val isLoading: Boolean = true,
     val error: ContentErrorConfig? = null,
     val isBottomSheetOpen: Boolean = false,
-    val isRevoked: Boolean = false,
 
     val documentDetailsUi: DocumentDetailsUi? = null,
     val title: String? = null,
-    val issuerName: String? = null,
-    val issuerLogo: URI? = null,
+    val issuerDetails: IssuerDetailsCardDataUi? = null,
     val documentCredentialsInfoUi: DocumentCredentialsInfoUi? = null,
-    val documentCredentialsInfoIsExpanded: Boolean,
-    val documentDetailsSectionTitle: String,
-    val documentIssuerSectionTitle: String,
 
     val isDocumentBookmarked: Boolean = false,
     val hideSensitiveContent: Boolean = true,
+
+    val notifyOnAuthenticationFailure: Boolean = false,
 
     val sheetContent: DocumentDetailsBottomSheetContent = DocumentDetailsBottomSheetContent.DeleteDocumentConfirmation,
 ) : ViewState
 
 sealed class Event : ViewEvent {
-    data object Init : Event()
+    data class Init(val deepLink: Uri?) : Event()
     data object Pop : Event()
     data class ClaimClicked(val itemId: String) : Event()
     data object SecondaryButtonPressed : Event()
@@ -86,16 +98,32 @@ sealed class Event : ViewEvent {
     data object OnBookmarkRemoved : Event()
     data object IssuerCardPressed : Event()
     data class OnRevocationStatusChanged(val revokedIds: List<String>) : Event()
-    data object ToggleExpansionStateOfDocumentCredentialsSection : Event()
+    data class OnReIssuanceTriggered(val reIssuedIds: List<String>) : Event()
+
+    sealed class IssuerDetails : Event() {
+        data object OnExpandedStateChanged : IssuerDetails()
+        data class OnActionButtonClicked(val context: Context) : IssuerDetails()
+    }
+
+    data object OnPause : Event()
+    data class OnResumeIssuance(val uri: String) : Event()
+    data class OnDynamicPresentation(val uri: String) : Event()
 }
 
 sealed class Effect : ViewSideEffect {
     sealed class Navigation : Effect() {
+
         data object Pop : Navigation()
+
         data class SwitchScreen(
             val screenRoute: String,
-            val popUpToScreenRoute: String,
-            val inclusive: Boolean
+            val popUpToScreenRoute: String?,
+            val inclusive: Boolean?
+        ) : Navigation()
+
+        data class DeepLink(
+            val link: Uri,
+            val routeToPop: String? = null
         ) : Navigation()
     }
 
@@ -125,18 +153,21 @@ sealed class DocumentDetailsBottomSheetContent {
 @KoinViewModel
 class DocumentDetailsViewModel(
     private val documentDetailsInteractor: DocumentDetailsInteractor,
+    private val uiSerializer: UiSerializer,
     private val resourceProvider: ResourceProvider,
     @InjectedParam private val documentId: DocumentId,
 ) : MviViewModel<Event, State, Effect>() {
-    override fun setInitialState(): State = State(
-        documentCredentialsInfoIsExpanded = false,
-        documentDetailsSectionTitle = resourceProvider.getString(R.string.document_details_main_section_text),
-        documentIssuerSectionTitle = resourceProvider.getString(R.string.document_details_issuer_section_text),
-    )
+    override fun setInitialState(): State = State()
 
     override fun handleEvents(event: Event) {
         when (event) {
-            is Event.Init -> getDocumentDetails(event)
+            is Event.Init -> {
+                if (viewState.value.documentDetailsUi == null) {
+                    getDocumentDetails(event)
+                } else {
+                    handleDeepLink(event.deepLink)
+                }
+            }
 
             is Event.Pop -> {
                 setState { copy(error = null) }
@@ -182,7 +213,7 @@ class DocumentDetailsViewModel(
 
             is Event.OnBookmarkStored -> {
                 showBottomSheet(
-                    sheetContent = DocumentDetailsBottomSheetContent.BookmarkStoredInfo(
+                    sheetContent = BookmarkStoredInfo(
                         bottomSheetTextData = getBookmarkStoredBottomSheetTextData()
                     )
                 )
@@ -190,7 +221,7 @@ class DocumentDetailsViewModel(
 
             is Event.OnBookmarkRemoved -> {
                 showBottomSheet(
-                    sheetContent = DocumentDetailsBottomSheetContent.BookmarkRemovedInfo(
+                    sheetContent = BookmarkRemovedInfo(
                         bottomSheetTextData = getBookmarkRemovedBottomSheetTextData()
                     )
                 )
@@ -198,21 +229,79 @@ class DocumentDetailsViewModel(
 
             is Event.IssuerCardPressed -> {
                 showBottomSheet(
-                    sheetContent = DocumentDetailsBottomSheetContent.TrustedRelyingPartyInfo(
+                    sheetContent = TrustedRelyingPartyInfo(
                         bottomSheetTextData = getTrustedRelyingPartyBottomSheetTextData()
                     )
                 )
             }
 
             is Event.OnRevocationStatusChanged -> {
-                setState {
-                    copy(
-                        isRevoked = event.revokedIds.contains(documentId)
+                getDocumentDetails(event)
+            }
+
+            is Event.OnReIssuanceTriggered -> {
+                checkIfRemoved(event.reIssuedIds)
+            }
+
+            is Event.IssuerDetails.OnExpandedStateChanged -> toggleIssuerDetailsCardExpansionState()
+
+            is Event.IssuerDetails.OnActionButtonClicked -> {
+                viewState.value.issuerDetails?.documentState?.let { safeDocumentState ->
+                    handleIssuerDetailsAction(
+                        event = event,
+                        context = event.context,
+                        documentState = safeDocumentState
                     )
                 }
             }
 
-            is Event.ToggleExpansionStateOfDocumentCredentialsSection -> toggleExpansionStateOfDocumentCredentialsSection()
+            is Event.OnDynamicPresentation -> {
+                setEffect {
+                    Effect.Navigation.SwitchScreen(
+                        generateComposableNavigationLink(
+                            PresentationScreens.PresentationRequest,
+                            generateComposableArguments(
+                                mapOf(
+                                    RequestUriConfig.serializedKeyName to uiSerializer.toBase64(
+                                        RequestUriConfig(
+                                            PresentationMode.OpenId4Vp(
+                                                event.uri,
+                                                DashboardScreens.DocumentDetails.screenRoute
+                                            )
+                                        ),
+                                        RequestUriConfig.Parser
+                                    )
+                                )
+                            )
+                        ),
+                        popUpToScreenRoute = DashboardScreens.DocumentDetails.screenRoute,
+                        inclusive = false
+                    )
+                }
+            }
+
+            is Event.OnPause -> {
+                viewState.value.documentDetailsUi?.let {
+                    setState { copy(isLoading = false) }
+                }
+            }
+
+            is Event.OnResumeIssuance -> {
+                setState {
+                    copy(isLoading = true)
+                }
+                documentDetailsInteractor.resumeOpenId4VciWithAuthorization(event.uri)
+            }
+        }
+    }
+
+    private fun checkIfRemoved(ids: List<String>) {
+        viewState.value.documentDetailsUi?.documentId?.let {
+            if (ids.contains(it)) {
+                setEffect {
+                    Effect.Navigation.Pop
+                }
+            }
         }
     }
 
@@ -227,6 +316,7 @@ class DocumentDetailsViewModel(
         viewModelScope.launch {
             documentDetailsInteractor.getDocumentDetails(
                 documentId = documentId,
+                wasIssuerDetailsExpanded = viewState.value.issuerDetails?.isExpanded
             ).collect { response ->
                 when (response) {
                     is DocumentDetailsInteractorPartialState.Success -> {
@@ -241,9 +331,7 @@ class DocumentDetailsViewModel(
                                 documentCredentialsInfoUi = response.documentCredentialsInfoUi,
                                 title = documentDetailsUi.documentName,
                                 isDocumentBookmarked = response.documentIsBookmarked,
-                                isRevoked = response.isRevoked,
-                                issuerName = response.issuerName,
-                                issuerLogo = response.issuerLogo
+                                issuerDetails = response.issuerDetails,
                             )
                         }
                     }
@@ -412,11 +500,110 @@ class DocumentDetailsViewModel(
         )
     }
 
-    private fun toggleExpansionStateOfDocumentCredentialsSection() {
+    private fun reIssueDocument(
+        event: Event,
+        context: Context,
+        document: DocumentDetailsUi
+    ) {
+
         setState {
             copy(
-                documentCredentialsInfoIsExpanded = !documentCredentialsInfoIsExpanded
+                isLoading = true,
+                error = null
             )
+        }
+
+        viewModelScope.launch {
+            documentDetailsInteractor.reIssueDocument(
+                documentId = document.documentId,
+                issuerId = document.issuerId
+            ).collect {
+                when (it) {
+                    is DocumentDetailsInteractorIssuancePartialState.Failure -> {
+                        setState {
+                            copy(
+                                isLoading = false,
+                                error = ContentErrorConfig(
+                                    onRetry = { setEvent(event) },
+                                    errorSubTitle = it.errorMessage,
+                                    onCancel = { setEvent(Event.DismissError) }
+                                )
+                            )
+                        }
+                    }
+
+                    is DocumentDetailsInteractorIssuancePartialState.Success -> {
+                        setEffect {
+                            Effect.Navigation.Pop
+                        }
+                    }
+
+                    is DocumentDetailsInteractorIssuancePartialState.UserAuthRequired -> {
+                        documentDetailsInteractor.handleUserAuth(
+                            context = context,
+                            crypto = it.crypto,
+                            notifyOnAuthenticationFailure = viewState.value.notifyOnAuthenticationFailure,
+                            resultHandler = DeviceAuthenticationResult(
+                                onAuthenticationSuccess = {
+                                    it.resultHandler.onAuthenticationSuccess()
+                                },
+                                onAuthenticationError = {
+                                    it.resultHandler.onAuthenticationError()
+                                }
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun toggleIssuerDetailsCardExpansionState() {
+        setState {
+            copy(
+                issuerDetails = issuerDetails?.copy(
+                    isExpanded = !issuerDetails.isExpanded
+                )
+            )
+        }
+    }
+
+    private fun handleIssuerDetailsAction(
+        event: Event,
+        context: Context,
+        documentState: IssuerDetailsCardDataUi.DocumentState
+    ) {
+        when (documentState) {
+            is IssuerDetailsCardDataUi.DocumentState.Issued -> {
+                viewState.value.documentDetailsUi?.let { safeDocumentDetailsUi ->
+                    reIssueDocument(
+                        event = event,
+                        context = context,
+                        document = safeDocumentDetailsUi
+                    )
+                }
+            }
+
+            is IssuerDetailsCardDataUi.DocumentState.Revoked -> {
+                // No-op
+            }
+        }
+    }
+
+    private fun handleDeepLink(deepLinkUri: Uri?) {
+        deepLinkUri?.let { uri ->
+            hasDeepLink(uri)?.let {
+                when (it.type) {
+
+                    DeepLinkType.EXTERNAL -> {
+                        setEffect {
+                            Effect.Navigation.DeepLink(uri)
+                        }
+                    }
+
+                    else -> {}
+                }
+            }
         }
     }
 }

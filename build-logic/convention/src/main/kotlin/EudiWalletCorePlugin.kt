@@ -27,8 +27,7 @@ class EudiWalletCorePlugin : Plugin<Project> {
                 apply("project.wallet.storage")
             }
             dependencies {
-                add("api", "eu.europa.ec.eudi.wallet:wallet-core")
-            }
+                add("api", project(":wallet-core"))            }
         }
     }
 }

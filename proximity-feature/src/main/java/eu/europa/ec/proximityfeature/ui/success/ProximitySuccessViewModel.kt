@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -16,20 +16,23 @@
 
 package eu.europa.ec.proximityfeature.ui.success
 
+import android.content.Intent
 import androidx.lifecycle.viewModelScope
 import eu.europa.ec.commonfeature.ui.document_success.DocumentSuccessViewModel
-import eu.europa.ec.corelogic.di.getOrCreatePresentationScope
+import eu.europa.ec.corelogic.di.getOrNullKoinScope
 import eu.europa.ec.proximityfeature.interactor.ProximitySuccessInteractor
 import eu.europa.ec.proximityfeature.interactor.ProximitySuccessInteractorGetUiItemsPartialState
 import eu.europa.ec.uilogic.config.ConfigNavigation
 import eu.europa.ec.uilogic.config.NavigationType
 import eu.europa.ec.uilogic.navigation.DashboardScreens
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
+import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class ProximitySuccessViewModel(
     private val interactor: ProximitySuccessInteractor,
+    @InjectedParam private val presentationScopeId: String
 ) : DocumentSuccessViewModel() {
 
     override fun getNextScreenConfigNavigation(): ConfigNavigation {
@@ -46,6 +49,9 @@ class ProximitySuccessViewModel(
         }
 
         viewModelScope.launch {
+
+            interactor.setScopeId(presentationScopeId)
+
             interactor.getUiItems().collect { response ->
                 when (response) {
                     is ProximitySuccessInteractorGetUiItemsPartialState.Failed -> {
@@ -70,9 +76,13 @@ class ProximitySuccessViewModel(
         }
     }
 
+    override fun getPendingIntent(): Intent? {
+        return null
+    }
+
     override fun onCleared() {
         super.onCleared()
         interactor.stopPresentation()
-        getOrCreatePresentationScope().close()
+        getOrNullKoinScope(presentationScopeId)?.close()
     }
 }

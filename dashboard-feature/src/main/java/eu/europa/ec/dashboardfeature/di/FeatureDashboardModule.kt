@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -18,9 +18,9 @@ package eu.europa.ec.dashboardfeature.di
 
 import eu.europa.ec.businesslogic.config.ConfigLogic
 import eu.europa.ec.businesslogic.controller.log.LogController
-import eu.europa.ec.businesslogic.controller.storage.PrefKeys
 import eu.europa.ec.businesslogic.provider.UuidProvider
 import eu.europa.ec.businesslogic.validator.FilterValidator
+import eu.europa.ec.commonfeature.interactor.DeviceAuthenticationInteractor
 import eu.europa.ec.corelogic.config.WalletCoreConfig
 import eu.europa.ec.corelogic.controller.WalletCoreDocumentsController
 import eu.europa.ec.dashboardfeature.interactor.DashboardInteractor
@@ -41,10 +41,12 @@ import eu.europa.ec.dashboardfeature.interactor.TransactionsInteractor
 import eu.europa.ec.dashboardfeature.interactor.TransactionsInteractorImpl
 import eu.europa.ec.resourceslogic.provider.ResourceProvider
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Module
 
 @Module
+@Configuration
 @ComponentScan("eu.europa.ec.dashboardfeature")
 class FeatureDashboardModule
 
@@ -60,12 +62,10 @@ fun provideSettingsInteractor(
     configLogic: ConfigLogic,
     logController: LogController,
     resourceProvider: ResourceProvider,
-    prefKeys: PrefKeys,
 ): SettingsInteractor = SettingsInteractorImpl(
     configLogic,
     logController,
     resourceProvider,
-    prefKeys,
 )
 
 @Factory
@@ -84,13 +84,13 @@ fun provideDocumentsInteractor(
     resourceProvider: ResourceProvider,
     documentsController: WalletCoreDocumentsController,
     filterValidator: FilterValidator,
-    prefKeys: PrefKeys,
+    configLogic: ConfigLogic
 ): DocumentsInteractor =
     DocumentsInteractorImpl(
         resourceProvider,
         documentsController,
         filterValidator,
-        prefKeys,
+        configLogic
     )
 
 @Factory
@@ -114,15 +114,17 @@ fun provideDocumentSignInteractor(
 @Factory
 fun provideDocumentDetailsInteractor(
     walletCoreDocumentsController: WalletCoreDocumentsController,
+    deviceAuthenticationInteractor: DeviceAuthenticationInteractor,
     resourceProvider: ResourceProvider,
     uuidProvider: UuidProvider,
-    prefKeys: PrefKeys,
+    configLogic: ConfigLogic
 ): DocumentDetailsInteractor =
     DocumentDetailsInteractorImpl(
         walletCoreDocumentsController,
+        deviceAuthenticationInteractor,
         resourceProvider,
         uuidProvider,
-        prefKeys,
+        configLogic
     )
 
 @Factory

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,10 +37,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import eu.europa.ec.commonfeature.config.OfferCodeUiConfig
 import eu.europa.ec.uilogic.component.AppIconAndText
 import eu.europa.ec.uilogic.component.AppIconAndTextDataUi
 import eu.europa.ec.uilogic.component.content.ContentScreen
+import eu.europa.ec.uilogic.component.content.ImePaddingConfig
 import eu.europa.ec.uilogic.component.content.ScreenNavigateAction
 import eu.europa.ec.uilogic.component.preview.PreviewTheme
 import eu.europa.ec.uilogic.component.preview.ThemeModePreviews
@@ -46,8 +48,7 @@ import eu.europa.ec.uilogic.component.utils.SPACING_LARGE
 import eu.europa.ec.uilogic.component.utils.SPACING_MEDIUM
 import eu.europa.ec.uilogic.component.utils.SPACING_SMALL
 import eu.europa.ec.uilogic.component.wrap.WrapPinTextField
-import eu.europa.ec.uilogic.config.ConfigNavigation
-import eu.europa.ec.uilogic.config.NavigationType
+import eu.europa.ec.uilogic.extension.paddingFrom
 import eu.europa.ec.uilogic.navigation.IssuanceScreens
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -67,11 +68,14 @@ fun DocumentOfferCodeScreen(
         isLoading = state.isLoading,
         contentErrorConfig = state.error,
         navigatableAction = ScreenNavigateAction.BACKABLE,
+        imePaddingConfig = ImePaddingConfig.ONLY_CONTENT,
         onBack = { viewModel.setEvent(Event.Pop) },
     ) { paddingValues ->
         Content(
             context = context,
-            state = state,
+            title = state.screenTitle,
+            subTitle = state.screenSubtitle,
+            pinCodeLength = state.offerCodeUiConfig.txCodeLength,
             effectFlow = viewModel.effect,
             onEventSend = { viewModel.setEvent(it) },
             onNavigationRequested = { navigationEffect ->
@@ -85,7 +89,9 @@ fun DocumentOfferCodeScreen(
 @Composable
 private fun Content(
     context: Context,
-    state: State,
+    title: String,
+    subTitle: String,
+    pinCodeLength: Int,
     effectFlow: Flow<Effect>,
     onEventSend: (Event) -> Unit,
     onNavigationRequested: (Effect.Navigation) -> Unit,
@@ -94,7 +100,8 @@ private fun Content(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues)
+            .paddingFrom(paddingValues, bottom = false)
+            .verticalScroll(rememberScrollState())
     ) {
         AppIconAndText(
             modifier = Modifier
@@ -110,39 +117,34 @@ private fun Content(
             verticalArrangement = Arrangement.spacedBy(SPACING_SMALL.dp, Alignment.Top)
         ) {
             Text(
-                text = state.screenTitle,
+                text = title,
                 style = MaterialTheme.typography.headlineMedium.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             )
 
             Text(
-                text = state.screenSubtitle,
+                text = subTitle,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
 
-        Column(
+        CodeFieldLayout(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = SPACING_LARGE.dp),
-            verticalArrangement = Arrangement.spacedBy(SPACING_SMALL.dp, Alignment.Top)
-        ) {
-            CodeFieldLayout(
-                modifier = Modifier.fillMaxWidth(),
-                state = state,
-                onPinInput = { quickPin ->
-                    onEventSend(
-                        Event.OnPinChange(
-                            code = quickPin,
-                            context = context
-                        )
+            length = pinCodeLength,
+            onPinInput = { quickPin ->
+                onEventSend(
+                    Event.OnPinChange(
+                        code = quickPin,
+                        context = context
                     )
-                }
-            )
-        }
+                )
+            }
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -157,7 +159,7 @@ private fun Content(
 @Composable
 private fun CodeFieldLayout(
     modifier: Modifier,
-    state: State,
+    length: Int,
     onPinInput: (String) -> Unit,
 ) {
     WrapPinTextField(
@@ -165,7 +167,7 @@ private fun CodeFieldLayout(
         onPinUpdate = {
             onPinInput(it)
         },
-        length = state.offerCodeUiConfig.txCodeLength,
+        length = length,
         visualTransformation = PasswordVisualTransformation(),
         pinWidth = 42.dp,
         focusOnCreate = true,
@@ -195,21 +197,9 @@ private fun handleNavigationEffect(
 private fun DocumentOfferCodeScreenEmptyPreview() {
     PreviewTheme {
         Content(
-            state = State(
-                isLoading = false,
-                error = null,
-                notifyOnAuthenticationFailure = false,
-                screenTitle = "Demo Issuer requires verification",
-                screenSubtitle = "Type the 5-digit transaction code you received.",
-                offerCodeUiConfig = OfferCodeUiConfig(
-                    offerURI = "https://offer.uri.com",
-                    txCodeLength = 5,
-                    issuerName = "Demo Issuer",
-                    onSuccessNavigation = ConfigNavigation(
-                        navigationType = NavigationType.Pop
-                    )
-                )
-            ),
+            title = "Demo Issuer requires verification",
+            subTitle = "Type the 5-digit transaction code you received.",
+            pinCodeLength = 5,
             effectFlow = Channel<Effect>().receiveAsFlow(),
             onEventSend = {},
             onNavigationRequested = {},

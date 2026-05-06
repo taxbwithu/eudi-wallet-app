@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -19,9 +19,15 @@ package eu.europa.ec.issuancefeature.util
 import eu.europa.ec.corelogic.model.ScopedDocumentDomain
 import eu.europa.ec.eudi.openid4vci.TxCode
 import eu.europa.ec.eudi.openid4vci.TxCodeInputMode
+import eu.europa.ec.eudi.wallet.document.NameSpace
 import eu.europa.ec.issuancefeature.ui.add.model.AddDocumentUi
 import eu.europa.ec.testfeature.util.mockedAgeVerificationDocName
 import eu.europa.ec.testfeature.util.mockedMdlDocName
+import eu.europa.ec.testfeature.util.mockedMdocAgeVerificationFormat
+import eu.europa.ec.testfeature.util.mockedMdocMdlFormat
+import eu.europa.ec.testfeature.util.mockedMdocPhotoIdFormat
+import eu.europa.ec.testfeature.util.mockedMdocPidFormat
+import eu.europa.ec.testfeature.util.mockedMdocPidNameSpace
 import eu.europa.ec.testfeature.util.mockedPhotoIdDocName
 import eu.europa.ec.testfeature.util.mockedPidDocName
 import eu.europa.ec.testfeature.util.mockedPidId
@@ -48,20 +54,27 @@ internal const val mockedPrimaryButtonText = "Primary button text"
 internal const val mockedRouteArguments = "mockedRouteArguments"
 internal const val mockedTxCode = "mockedTxCode"
 internal const val mockedSuccessText = "Success text"
+internal const val mockedCombinedPid = "PID Combined"
 internal const val mockedSuccessDescription = "Success description"
 internal const val mockedErrorDescription = "Error description"
+internal const val mockedIssuerId = "issuerId"
+internal const val mockedIssuerOrder = 0
 
 private const val mockedConfigIssuerId = "configurationId"
 
 internal val mockedPidOptionItemUi = AddDocumentUi(
+    credentialIssuerId = mockedIssuerId,
+    configurationIds = listOf(mockedConfigIssuerId),
     itemData = ListItemDataUi(
-        itemId = mockedConfigIssuerId,
-        mainContentData = ListItemMainContentDataUi.Text(text = mockedPidDocName),
+        itemId = "${mockedIssuerId}_$mockedConfigIssuerId",
+        mainContentData = ListItemMainContentDataUi.Text(text = mockedCombinedPid),
         trailingContentData = ListItemTrailingContentDataUi.Icon(iconData = AppIcons.Add)
     ),
 )
 
 internal val mockedMdlOptionItemUi = AddDocumentUi(
+    credentialIssuerId = mockedIssuerId,
+    configurationIds = listOf(mockedConfigIssuerId),
     itemData = ListItemDataUi(
         itemId = mockedConfigIssuerId,
         mainContentData = ListItemMainContentDataUi.Text(text = mockedMdlDocName),
@@ -70,6 +83,8 @@ internal val mockedMdlOptionItemUi = AddDocumentUi(
 )
 
 internal val mockedAgeOptionItemUi = AddDocumentUi(
+    credentialIssuerId = mockedIssuerId,
+    configurationIds = listOf(mockedConfigIssuerId),
     itemData = ListItemDataUi(
         itemId = mockedConfigIssuerId,
         mainContentData = ListItemMainContentDataUi.Text(text = mockedAgeVerificationDocName),
@@ -78,6 +93,8 @@ internal val mockedAgeOptionItemUi = AddDocumentUi(
 )
 
 internal val mockedPhotoIdOptionItemUi = AddDocumentUi(
+    credentialIssuerId = mockedIssuerId,
+    configurationIds = listOf(mockedConfigIssuerId),
     itemData = ListItemDataUi(
         itemId = mockedConfigIssuerId,
         mainContentData = ListItemMainContentDataUi.Text(text = mockedPhotoIdDocName),
@@ -90,22 +107,34 @@ internal val mockedScopedDocuments: List<ScopedDocumentDomain>
         ScopedDocumentDomain(
             name = mockedPidDocName,
             configurationId = mockedConfigIssuerId,
-            isPid = true
+            credentialIssuerId = mockedIssuerId,
+            credentialIssuerOrder = mockedIssuerOrder,
+            isPid = true,
+            formatType = mockedMdocPidFormat.docType
         ),
         ScopedDocumentDomain(
             name = mockedMdlDocName,
             configurationId = mockedConfigIssuerId,
-            isPid = false
+            credentialIssuerId = mockedIssuerId,
+            credentialIssuerOrder = mockedIssuerOrder,
+            isPid = false,
+            formatType = mockedMdocMdlFormat.docType
         ),
         ScopedDocumentDomain(
             name = mockedAgeVerificationDocName,
             configurationId = mockedConfigIssuerId,
-            isPid = false
+            credentialIssuerId = mockedIssuerId,
+            credentialIssuerOrder = mockedIssuerOrder,
+            isPid = false,
+            formatType = mockedMdocAgeVerificationFormat.docType
         ),
         ScopedDocumentDomain(
             name = mockedPhotoIdDocName,
             configurationId = mockedConfigIssuerId,
-            isPid = false
+            credentialIssuerId = mockedIssuerId,
+            isPid = false,
+            credentialIssuerOrder = mockedIssuerOrder,
+            formatType = mockedMdocPhotoIdFormat.docType
         )
     ).sortedBy { it.name.lowercase() }
 
@@ -128,14 +157,14 @@ internal val mockedConfigNavigationTypePopToScreen = ConfigNavigation(
 )
 
 internal val mockedMdocPidClaims = listOf(
-    createMdocClaimListItem(mockedPidId, "age_birth_year", "1985"),
-    createMdocClaimListItem(mockedPidId, "age_over_18", "yes"),
-    createMdocClaimListItem(mockedPidId, "age_over_65", "no"),
-    createMdocClaimListItem(mockedPidId, "birth_city", "KATRINEHOLM"),
-    createMdocClaimListItem(mockedPidId, "expiry_date", "30 Mar 2050"),
-    createMdocClaimListItem(mockedPidId, "family_name", "ANDERSSON"),
-    createMdocClaimListItem(mockedPidId, "gender", "Male"),
-    createMdocClaimListItem(mockedPidId, "given_name", "JAN"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "age_birth_year", "1985"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "age_over_18", "yes"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "age_over_65", "no"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "birth_city", "KATRINEHOLM"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "expiry_date", "30 Mar 2050"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "family_name", "ANDERSSON"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "gender", "Male"),
+    createMdocClaimListItem(mockedPidId, mockedMdocPidNameSpace, "given_name", "JAN"),
 )
 
 internal val mockedSdJwtPidClaims = listOf(
@@ -263,11 +292,17 @@ internal val mockedSdJwtPidClaims = listOf(
     ),
 )
 
-private fun createMdocClaimListItem(docId: String, claimIdentifier: String, value: String) =
-    ExpandableListItemUi.SingleListItem(
+private fun createMdocClaimListItem(
+    docId: String,
+    nameSpace: NameSpace,
+    claimIdentifier: String,
+    value: String
+): ExpandableListItemUi.SingleListItem {
+    return ExpandableListItemUi.SingleListItem(
         header = ListItemDataUi(
-            itemId = "$docId,$claimIdentifier",
+            itemId = "$docId,$nameSpace,$claimIdentifier",
             overlineText = claimIdentifier,
             mainContentData = ListItemMainContentDataUi.Text(value)
         )
     )
+}

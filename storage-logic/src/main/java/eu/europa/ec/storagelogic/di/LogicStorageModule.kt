@@ -19,14 +19,17 @@ package eu.europa.ec.storagelogic.di
 import android.content.Context
 import androidx.room.Room
 import eu.europa.ec.storagelogic.dao.BookmarkDao
+import eu.europa.ec.storagelogic.dao.FailedReIssuedDocumentDao
 import eu.europa.ec.storagelogic.dao.RevokedDocumentDao
 import eu.europa.ec.storagelogic.dao.TransactionLogDao
 import eu.europa.ec.storagelogic.service.DatabaseService
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
 @Module
+@Configuration
 @ComponentScan("eu.europa.ec.storagelogic")
 class LogicStorageModule
 
@@ -48,3 +51,7 @@ fun provideRevokedDocumentDao(service: DatabaseService): RevokedDocumentDao =
 @Single
 fun provideTransactionLogDao(service: DatabaseService): TransactionLogDao =
     service.transactionLogDao()
+
+@Single
+fun provideFailedReIssuedDocumentDao(service: DatabaseService): FailedReIssuedDocumentDao =
+    service.failedReIssuedDocumentDao()

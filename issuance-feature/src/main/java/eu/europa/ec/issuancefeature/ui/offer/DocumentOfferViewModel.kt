@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 European Commission
+ * Copyright (c) 2025 European Commission
  *
  * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
  * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
@@ -26,8 +26,9 @@ import eu.europa.ec.commonfeature.config.OfferCodeUiConfig
 import eu.europa.ec.commonfeature.config.OfferUiConfig
 import eu.europa.ec.commonfeature.config.PresentationMode
 import eu.europa.ec.commonfeature.config.RequestUriConfig
-import eu.europa.ec.corelogic.di.getOrCreatePresentationScope
 import eu.europa.ec.eudi.wallet.document.DocumentId
+import eu.europa.ec.issuancefeature.di.getOrCreateCredentialOfferScope
+import eu.europa.ec.issuancefeature.di.getOrNullCredentialOfferScope
 import eu.europa.ec.issuancefeature.interactor.DocumentOfferInteractor
 import eu.europa.ec.issuancefeature.interactor.IssueDocumentsInteractorPartialState
 import eu.europa.ec.issuancefeature.interactor.ResolveDocumentOfferInteractorPartialState
@@ -52,8 +53,8 @@ import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
 import eu.europa.ec.uilogic.navigation.helper.hasDeepLink
 import eu.europa.ec.uilogic.serializer.UiSerializer
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.KoinViewModel
 import java.net.URI
 
 data class State(
@@ -104,11 +105,19 @@ sealed class Effect : ViewSideEffect {
 
 @KoinViewModel
 class DocumentOfferViewModel(
-    private val documentOfferInteractor: DocumentOfferInteractor,
     private val resourceProvider: ResourceProvider,
     private val uiSerializer: UiSerializer,
     @InjectedParam private val offerSerializedConfig: String,
+    documentOfferInteractor: DocumentOfferInteractor? = null
 ) : MviViewModel<Event, State, Effect>() {
+
+    private var _documentOfferInteractor: DocumentOfferInteractor? = documentOfferInteractor
+
+    private val documentOfferInteractor: DocumentOfferInteractor
+        get() = _documentOfferInteractor
+            ?: getOrCreateCredentialOfferScope().get<DocumentOfferInteractor>().also {
+                _documentOfferInteractor = it
+            }
 
     override fun setInitialState(): State {
         val deserializedOfferUiConfig = uiSerializer.fromBase64(
@@ -128,7 +137,7 @@ class DocumentOfferViewModel(
             is Event.Init -> {
                 if (viewState.value.documents.isEmpty()) {
                     resolveDocumentOffer(
-                        offerUri = viewState.value.offerUiConfig.offerURI,
+                        offerUri = viewState.value.offerUiConfig.offerUri,
                         deepLink = event.deepLink
                     )
                 } else {
@@ -148,7 +157,7 @@ class DocumentOfferViewModel(
             is Event.StickyButtonPressed -> {
                 issueDocuments(
                     context = event.context,
-                    offerUri = viewState.value.offerUiConfig.offerURI,
+                    offerUri = viewState.value.offerUiConfig.offerUri,
                     issuerName = viewState.value.headerConfig.relyingPartyData?.name.ifEmptyOrNull(
                         default = resourceProvider.getString(R.string.issuance_document_offer_relying_party_default_name)
                     ),
@@ -171,7 +180,6 @@ class DocumentOfferViewModel(
             }
 
             is Event.OnDynamicPresentation -> {
-                getOrCreatePresentationScope()
                 setEffect {
                     Effect.Navigation.SwitchScreen(
                         generateComposableNavigationLink(
@@ -303,10 +311,10 @@ class DocumentOfferViewModel(
 
             txCodeLength?.let {
                 navigateToOfferCodeScreen(
-                    offerUri,
-                    issuerName,
-                    txCodeLength,
-                    onSuccessNavigation
+                    offerUri = offerUri,
+                    issuerName = issuerName,
+                    txCodeLength = txCodeLength,
+                    onSuccessNavigation = onSuccessNavigation
                 )
                 return@launch
             }
@@ -372,6 +380,11 @@ class DocumentOfferViewModel(
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        getOrNullCredentialOfferScope()?.close()
+        super.onCleared()
     }
 
     private fun goToDocumentIssuanceSuccessScreen(
@@ -450,10 +463,10 @@ class DocumentOfferViewModel(
                 screenRoute = generateComposableNavigationLink(
                     IssuanceScreens.DocumentOfferCode,
                     getNavigateOfferCodeScreenArguments(
-                        offerUri,
-                        issuerName,
-                        txCodeLength,
-                        onSuccessNavigation
+                        offerUri = offerUri,
+                        issuerName = issuerName,
+                        txCodeLength = txCodeLength,
+                        onSuccessNavigation = onSuccessNavigation
                     )
                 ),
                 shouldPopToSelf = false
@@ -471,7 +484,7 @@ class DocumentOfferViewModel(
             mapOf(
                 OfferCodeUiConfig.serializedKeyName to uiSerializer.toBase64(
                     OfferCodeUiConfig(
-                        offerURI = offerUri,
+                        offerUri = offerUri,
                         txCodeLength = txCodeLength,
                         issuerName = issuerName,
                         onSuccessNavigation = onSuccessNavigation
