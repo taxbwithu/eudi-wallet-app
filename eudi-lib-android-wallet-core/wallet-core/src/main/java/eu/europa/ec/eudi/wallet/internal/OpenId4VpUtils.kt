@@ -328,7 +328,7 @@ internal suspend fun SdJwt<JwtAndClaims>.serializeWithKeyBinding(
     val provider = keyUnlockData.asProvider()
     var pemPublicKey: JWK;
     if (publicKey is CustomKeyInfo) {
-        algorithm = JWSAlgorithm.Dilithium3
+        algorithm = JWSAlgorithm.ML_DSA_44
         val publicKeyBytes = publicKey.dilithiumPublicKey
         val pem = dilithiumPublicKeyToPem(publicKeyBytes)
         print("test");
